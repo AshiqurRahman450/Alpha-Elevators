@@ -5,7 +5,6 @@ export const LoadingScreen = () => {
   const [progress, setProgress] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const logoRef = useRef<HTMLImageElement>(null)
-  const textRef = useRef<HTMLHeadingElement>(null)
   const elevatorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
