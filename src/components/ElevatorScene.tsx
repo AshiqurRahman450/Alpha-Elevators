@@ -190,7 +190,9 @@ export const ElevatorScene = () => {
 
   return (
     <group>
-      <ambientLight ref={ambientLightRef} intensity={0.6} />
+      <ambientLight ref={ambientLightRef} intensity={0.8} />
+      <directionalLight position={[5, 10, 5]} intensity={1.5} color="#ffffff" />
+      <directionalLight position={[-5, 5, -5]} intensity={0.5} color="#00cccc" />
 
       <group ref={verticalLightsRef} visible={false}>
         {[...Array(10)].map((_, i) => (
