@@ -3,7 +3,7 @@ import Lenis from '@studio-freight/lenis'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { Navbar } from './components/Navbar'
-import { LoadingScreen } from './components/LoadingScreen'
+
 import { Hero } from './components/Hero'
 import { About } from './components/About'
 import { WhyAlpha } from './components/WhyAlpha'
@@ -45,7 +45,7 @@ function App() {
 
   return (
     <>
-      <LoadingScreen />
+
       <CustomCursor />
       <Navbar />
       
