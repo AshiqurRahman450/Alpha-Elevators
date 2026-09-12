@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useGLTF } from '@react-three/drei'
+import { Suspense } from 'react'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -37,12 +38,7 @@ export const ElevatorScene = () => {
   
   const { camera } = useThree()
   
-  const { scene: downloadedModel } = useGLTF('/AntiqueCamera.glb')
-
   useFrame((state) => {
-    if (downloadedModel) {
-      downloadedModel.rotation.y = state.clock.elapsedTime * 0.1
-    }
     if (verticalLightsRef.current && verticalLightsRef.current.visible) {
       verticalLightsRef.current.children.forEach((light) => {
         light.position.y -= 0.2
@@ -272,15 +268,9 @@ export const ElevatorScene = () => {
           <meshStandardMaterial color="#e0e0e0" metalness={1} roughness={0.1} />
         </mesh>
 
-        {downloadedModel && (
-          <group position={[1.5, -2, -1.5]} scale={0.3}>
-            <mesh position={[0, -0.2, 0]}>
-               <cylinderGeometry args={[1, 1.2, 0.4, 32]} />
-               <meshStandardMaterial color="#00cccc" metalness={0.8} roughness={0.2} />
-            </mesh>
-            <primitive object={downloadedModel} position={[0, 0, 0]} />
-          </group>
-        )}
+        <Suspense fallback={null}>
+          <AntiqueCameraModel />
+        </Suspense>
 
         <group ref={doorsRef} position={[0, 0, 2]}>
           <mesh ref={leftDoorRef} position={[-1, 0, 0]}>
@@ -296,3 +286,22 @@ export const ElevatorScene = () => {
     </group>
   )
 }
+
+const AntiqueCameraModel = () => {
+  const { scene: downloadedModel } = useGLTF('/AntiqueCamera.glb')
+  useFrame((state) => {
+    if (downloadedModel) {
+      downloadedModel.rotation.y = state.clock.elapsedTime * 0.1
+    }
+  })
+  return (
+    <group position={[1.5, -2, -1.5]} scale={0.3}>
+      <mesh position={[0, -0.2, 0]}>
+         <cylinderGeometry args={[1, 1.2, 0.4, 32]} />
+         <meshStandardMaterial color="#00cccc" metalness={0.8} roughness={0.2} />
+      </mesh>
+      <primitive object={downloadedModel} position={[0, 0, 0]} />
+    </group>
+  )
+}
+

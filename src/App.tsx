@@ -52,12 +52,12 @@ function App() {
       {/* Global 3D Canvas */}
       <div className="fixed top-0 left-0 w-full h-full -z-10 bg-primary pointer-events-none">
         <Canvas shadows camera={{ position: [0, 0, 10], fov: 45 }}>
+          <color attach="background" args={['#050505']} />
+          <ambientLight intensity={0.5} />
           <Suspense fallback={null}>
-            <color attach="background" args={['#050505']} />
-            <ambientLight intensity={0.5} />
             <Environment preset="city" />
-            <ElevatorScene />
           </Suspense>
+          <ElevatorScene />
         </Canvas>
       </div>
 
