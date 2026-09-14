@@ -1,7 +1,7 @@
-import { useEffect, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Canvas } from '@react-three/fiber'
-import { Environment } from '@react-three/drei'
+import { useProgress, Environment } from '@react-three/drei'
 import { Navbar } from './components/Navbar'
 
 import { Hero } from './components/Hero'
@@ -18,13 +18,26 @@ import { Contact } from './components/Contact'
 import { Footer } from './components/Footer'
 import { CustomCursor } from './components/CustomCursor'
 import { ElevatorScene } from './components/ElevatorScene'
+import { LoadingScreen } from './components/LoadingScreen'
 
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+// Inner component that reads the drei loading progress
+const LoadingTracker = ({ onProgress }: { onProgress: (p: number) => void }) => {
+  const { progress } = useProgress()
+  useEffect(() => {
+    onProgress(progress)
+  }, [progress, onProgress])
+  return null
+}
+
 function App() {
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const [isLoaded, setIsLoaded] = useState(false)
+
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -52,6 +65,13 @@ function App() {
 
   return (
     <>
+      {/* Loading Screen - shows real 3D loading progress */}
+      {/* {!isLoaded && (
+        <LoadingScreen 
+          progress={loadingProgress} 
+          onComplete={() => setIsLoaded(true)} 
+        />
+      )} */}
 
       <CustomCursor />
       <Navbar />
@@ -61,10 +81,15 @@ function App() {
         <Canvas shadows camera={{ position: [0, 0, 10], fov: 45 }}>
           <color attach="background" args={['#050505']} />
           <ambientLight intensity={0.5} />
+          <directionalLight position={[5, 5, 5]} intensity={0.4} />
+          <directionalLight position={[-5, 3, -5]} intensity={0.2} />
+          <pointLight position={[0, 4, 0]} intensity={0.3} />
           <Suspense fallback={null}>
             <Environment preset="city" />
+            <ElevatorScene />
           </Suspense>
-          <ElevatorScene />
+          {/* Track real loading progress */}
+          <LoadingTracker onProgress={setLoadingProgress} />
         </Canvas>
       </div>
 
@@ -88,3 +113,4 @@ function App() {
 }
 
 export default App
+

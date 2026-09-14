@@ -305,3 +305,7 @@ const AntiqueCameraModel = () => {
   )
 }
 
+// Preload the GLB model at module level so it starts downloading immediately
+// when the JS bundle is parsed, not when the component first mounts
+useGLTF.preload('/AntiqueCamera.glb')
+
