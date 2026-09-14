@@ -66,12 +66,12 @@ function App() {
   return (
     <>
       {/* Loading Screen - shows real 3D loading progress */}
-      {/* {!isLoaded && (
+      {!isLoaded && (
         <LoadingScreen 
           progress={loadingProgress} 
           onComplete={() => setIsLoaded(true)} 
         />
-      )} */}
+      )}
 
       <CustomCursor />
       <Navbar />
