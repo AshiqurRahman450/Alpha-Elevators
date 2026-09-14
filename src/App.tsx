@@ -1,7 +1,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Canvas } from '@react-three/fiber'
-import { useProgress, Environment, Lightformer } from '@react-three/drei'
+import { useProgress, Environment } from '@react-three/drei'
 import { Navbar } from './components/Navbar'
 
 import { Hero } from './components/Hero'
@@ -80,21 +80,10 @@ function App() {
       <div className="fixed top-0 left-0 w-full h-full -z-10 bg-primary pointer-events-none">
         <Canvas shadows camera={{ position: [0, 0, 10], fov: 45 }}>
           <color attach="background" args={['#050505']} />
-          <ambientLight intensity={1.2} />
-          <directionalLight position={[5, 5, 5]} intensity={1.5} />
-          <directionalLight position={[-5, 3, -5]} intensity={0.8} />
-          <directionalLight position={[0, 8, 3]} intensity={1} />
-          <pointLight position={[0, 4, 0]} intensity={1} />
-          {/* Procedural environment - generates reflections in-browser, NO network download */}
-          <Environment resolution={256}>
-            <Lightformer form="rect" intensity={8} position={[0, 5, -5]} scale={[10, 3, 1]} color="#ffffff" />
-            <Lightformer form="rect" intensity={5} position={[5, 2, 0]} scale={[2, 8, 1]} rotation={[0, Math.PI / 2, 0]} color="#e8e8ff" />
-            <Lightformer form="rect" intensity={5} position={[-5, 2, 0]} scale={[2, 8, 1]} rotation={[0, -Math.PI / 2, 0]} color="#e8e8ff" />
-            <Lightformer form="ring" intensity={3} position={[0, -3, 0]} scale={8} rotation={[-Math.PI / 2, 0, 0]} color="#ffffff" />
-            <Lightformer form="rect" intensity={6} position={[0, 3, 5]} scale={[10, 3, 1]} color="#ffffff" />
-            <Lightformer form="rect" intensity={4} position={[0, 8, 0]} scale={[15, 1, 15]} rotation={[-Math.PI / 2, 0, 0]} color="#f0f0ff" />
-          </Environment>
-          {/* ElevatorScene is mostly procedural geometry - renders instantly */}
+          <ambientLight intensity={0.5} />
+          <Suspense fallback={null}>
+            <Environment preset="city" />
+          </Suspense>
           <ElevatorScene />
           {/* Track real loading progress */}
           <LoadingTracker onProgress={setLoadingProgress} />
