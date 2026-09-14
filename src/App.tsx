@@ -1,7 +1,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Canvas } from '@react-three/fiber'
-import { useProgress, Environment } from '@react-three/drei'
+import { useProgress, Environment, Lightformer } from '@react-three/drei'
 import { Navbar } from './components/Navbar'
 
 import { Hero } from './components/Hero'
@@ -84,10 +84,16 @@ function App() {
           <directionalLight position={[5, 5, 5]} intensity={0.4} />
           <directionalLight position={[-5, 3, -5]} intensity={0.2} />
           <pointLight position={[0, 4, 0]} intensity={0.3} />
-          <Suspense fallback={null}>
-            <Environment preset="city" />
-            <ElevatorScene />
-          </Suspense>
+          {/* Procedural environment - generates reflections in-browser, NO network download */}
+          <Environment resolution={128}>
+            <Lightformer form="rect" intensity={2} position={[0, 5, -5]} scale={[10, 2, 1]} />
+            <Lightformer form="rect" intensity={1} position={[5, 2, 0]} scale={[1, 5, 1]} rotation={[0, Math.PI / 2, 0]} />
+            <Lightformer form="rect" intensity={1} position={[-5, 2, 0]} scale={[1, 5, 1]} rotation={[0, -Math.PI / 2, 0]} />
+            <Lightformer form="ring" intensity={0.5} position={[0, -3, 0]} scale={5} rotation={[-Math.PI / 2, 0, 0]} />
+            <Lightformer form="rect" intensity={0.8} position={[0, 3, 5]} scale={[10, 2, 1]} />
+          </Environment>
+          {/* ElevatorScene is mostly procedural geometry - renders instantly */}
+          <ElevatorScene />
           {/* Track real loading progress */}
           <LoadingTracker onProgress={setLoadingProgress} />
         </Canvas>
