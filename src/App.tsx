@@ -82,7 +82,7 @@ function App() {
           <color attach="background" args={['#050505']} />
           <ambientLight intensity={0.5} />
           <Suspense fallback={null}>
-            <Environment preset="city" />
+            <Environment files="/potsdamer_platz_1k.hdr" />
           </Suspense>
           <ElevatorScene />
           {/* Track real loading progress */}
