@@ -4,7 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
-export const Hero = () => {
+export const Hero = ({ onExplore }: { onExplore?: () => void }) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export const Hero = () => {
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row gap-6 pointer-events-auto">
-            <button className="hero-cta px-8 py-4 bg-accent text-primary font-semibold tracking-widest uppercase text-sm hover:bg-white transition-colors duration-300">
+            <button onClick={onExplore} className="hero-cta px-8 py-4 bg-accent text-primary font-semibold tracking-widest uppercase text-sm hover:bg-white transition-colors duration-300">
               Explore Our Elevators
             </button>
             <button className="hero-cta px-8 py-4 border border-white/20 text-white font-semibold tracking-widest uppercase text-sm hover:border-accent hover:text-accent transition-colors duration-300 backdrop-blur-sm bg-primary/10">

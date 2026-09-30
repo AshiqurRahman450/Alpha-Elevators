@@ -38,7 +38,7 @@ export const ElevatorScene = () => {
   
   const { camera } = useThree()
   
-  useFrame((state) => {
+  useFrame(() => {
     if (verticalLightsRef.current && verticalLightsRef.current.visible) {
       verticalLightsRef.current.children.forEach((light) => {
         light.position.y -= 0.2
@@ -59,6 +59,61 @@ export const ElevatorScene = () => {
       camera.position.set(0, 0, isMobile ? 14 : 8)
       camera.rotation.set(0, 0, 0)
       
+      // AUTO PLAY LOOP ON HERO (Open -> Move In -> Rotate -> Move Out -> Close)
+      const tlLoad = gsap.timeline({ repeat: -1 });
+      const perspCamera = camera as THREE.PerspectiveCamera;
+
+      // Step 1: Doors open (0s to 1.5s)
+      if (leftDoorRef.current && rightDoorRef.current) {
+        tlLoad.fromTo(leftDoorRef.current.position, { x: -1 }, { x: -2.1, duration: 1.5, ease: 'power2.inOut' }, 0);
+        tlLoad.fromTo(rightDoorRef.current.position, { x: 1 }, { x: 2.1, duration: 1.5, ease: 'power2.inOut' }, 0);
+      }
+
+      // Step 2: Camera moves inside and zooms out (0.5s to 2.5s)
+      tlLoad.fromTo(camera.position, 
+        { z: isMobile ? 14 : 8, x: 0, y: 0 }, 
+        { z: 0, x: 0, y: 0, duration: 2, ease: 'power2.inOut' }, 0.5);
+      tlLoad.fromTo(perspCamera,
+        { fov: 45 },
+        { fov: 85, duration: 2, ease: 'power2.inOut', onUpdate: () => perspCamera.updateProjectionMatrix() }, 0.5);
+
+      // Step 3: Fast inner rotate 360 degrees (2.0s to 5.0s)
+      tlLoad.fromTo(camera.rotation, 
+        { x: 0, y: 0, z: 0 }, 
+        { x: 0, y: Math.PI * 2, z: 0, duration: 3, ease: 'power1.inOut' }, 2.0);
+
+      // Step 4: Camera moves back outside and restores zoom (4.5s to 6.5s)
+      tlLoad.to(camera.position, { z: isMobile ? 14 : 8, duration: 2, ease: 'power2.inOut' }, 4.5);
+      tlLoad.to(perspCamera,
+        { fov: 45, duration: 2, ease: 'power2.inOut', onUpdate: () => perspCamera.updateProjectionMatrix() }, 4.5);
+
+      // Step 5: Doors close (5.5s to 7.0s)
+      if (leftDoorRef.current && rightDoorRef.current) {
+        tlLoad.to(leftDoorRef.current.position, { x: -1, duration: 1.5, ease: 'power2.inOut' }, 5.5);
+        tlLoad.to(rightDoorRef.current.position, { x: 1, duration: 1.5, ease: 'power2.inOut' }, 5.5);
+      }
+      
+      // Small pause at the end before loop restarts
+      tlLoad.to({}, { duration: 1 });
+
+      // Pause loop when scrolling starts, and snap back to the exact outside start state
+      ScrollTrigger.create({
+        trigger: '#about',
+        start: 'top bottom', // As soon as the user starts scrolling down
+        onEnter: () => {
+          tlLoad.pause();
+          // Swiftly move the camera and doors back to default state so the scroll tour works normally!
+          gsap.to(camera.position, { z: isMobile ? 14 : 8, duration: 0.5, ease: "power2.out", overwrite: "auto" });
+          gsap.to(camera.rotation, { y: 0, duration: 0.5, ease: "power2.out", overwrite: "auto" });
+          gsap.to(perspCamera, { fov: 45, duration: 0.5, ease: "power2.out", overwrite: "auto", onUpdate: () => perspCamera.updateProjectionMatrix() });
+          if (leftDoorRef.current) gsap.to(leftDoorRef.current.position, { x: -1, duration: 0.5, overwrite: "auto" });
+          if (rightDoorRef.current) gsap.to(rightDoorRef.current.position, { x: 1, duration: 0.5, overwrite: "auto" });
+        },
+        onLeaveBack: () => {
+          tlLoad.play();
+        }
+      });
+
       // 1. HERO -> ABOUT
       const tlHero = gsap.timeline({ scrollTrigger: { trigger: '#about', start: 'top bottom', end: 'top center', scrub: 1.5 } })
       tlHero.to(camera.position, { z: isMobile ? 6 : 2.5, ease: 'power2.inOut' }, 0)

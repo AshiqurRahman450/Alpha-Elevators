@@ -19,6 +19,7 @@ import { Footer } from './components/Footer'
 import { CustomCursor } from './components/CustomCursor'
 import { ElevatorScene } from './components/ElevatorScene'
 import { LoadingScreen } from './components/LoadingScreen'
+import { ExplorePage } from './components/ExplorePage'
 
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -37,8 +38,11 @@ const LoadingTracker = ({ onProgress }: { onProgress: (p: number) => void }) => 
 function App() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [isExploreMode, setIsExploreMode] = useState(false)
 
   useEffect(() => {
+    if (isExploreMode) return;
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -61,7 +65,16 @@ function App() {
       lenis.destroy()
       gsap.ticker.remove(lenis.raf)
     }
-  }, [])
+  }, [isExploreMode])
+
+  if (isExploreMode) {
+    return (
+      <>
+        <CustomCursor />
+        <ExplorePage onBack={() => setIsExploreMode(false)} />
+      </>
+    )
+  }
 
   return (
     <>
@@ -91,7 +104,7 @@ function App() {
       </div>
 
       <main className="relative z-10 w-full overflow-hidden">
-        <Hero />
+        <Hero onExplore={() => setIsExploreMode(true)} />
         <About />
         <WhyAlpha />
         <Features />
