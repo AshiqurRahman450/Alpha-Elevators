@@ -7,8 +7,8 @@
   --color-metal: #b8b8b8;
   --color-accent: #00cccc;
   
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: 'Poppins', system-ui, sans-serif;
+  --font-display: 'Poppins', system-ui, sans-serif;
 }
 
 :root {
@@ -23,7 +23,7 @@
 body {
   background-color: var(--color-primary);
   color: var(--color-white);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Poppins', system-ui, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   margin: 0;

@@ -129,7 +129,13 @@ export const BigEVLift = () => {
   )
 }
 
-export const ExplorePage = ({ onBack }: { onBack: () => void }) => {
+export const ExplorePage = ({ 
+  onBack, 
+  onRequestConsultation 
+}: { 
+  onBack: () => void
+  onRequestConsultation?: (data?: { modelName: string, id: string, budget: string }) => void 
+}) => {
   const [showBudget, setShowBudget] = useState(false)
   const [showButton, setShowButton] = useState(false)
 
@@ -187,7 +193,13 @@ export const ExplorePage = ({ onBack }: { onBack: () => void }) => {
   ]
 
   if (selectedLift) {
-    return <LiftDetailsPage lift={selectedLift} onBack={() => setSelectedLift(null)} />
+    return (
+      <LiftDetailsPage 
+        lift={selectedLift} 
+        onBack={() => setSelectedLift(null)} 
+        onRequestConsultation={onRequestConsultation}
+      />
+    )
   }
 
   return (

@@ -198,7 +198,15 @@ export type LiftData = {
   features: string[]
 }
 
-export const LiftDetailsPage = ({ lift, onBack }: { lift: LiftData, onBack: () => void }) => {
+export const LiftDetailsPage = ({ 
+  lift, 
+  onBack, 
+  onRequestConsultation 
+}: { 
+  lift: LiftData
+  onBack: () => void
+  onRequestConsultation?: (data?: { modelName: string, id: string, budget: string }) => void 
+}) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const bgRef = useRef<HTMLDivElement>(null)
 
@@ -413,6 +421,21 @@ export const LiftDetailsPage = ({ lift, onBack }: { lift: LiftData, onBack: () =
           </div>
           
           <button 
+            onClick={() => {
+              if (onRequestConsultation) {
+                onRequestConsultation({
+                  modelName: lift.name,
+                  id: lift.id,
+                  budget: lift.budget
+                })
+              } else {
+                if (onBack) onBack();
+                setTimeout(() => {
+                  const formEl = document.getElementById('contact-form') || document.getElementById('contact');
+                  formEl?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
+            }}
             className="mt-12 w-full py-6 rounded-xl relative overflow-hidden group border border-white/20 hover:border-transparent transition-all duration-500"
           >
             <div 

@@ -4,7 +4,13 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
-export const Hero = ({ onExplore }: { onExplore?: () => void }) => {
+export const Hero = ({ 
+  onExplore, 
+  onConsultation 
+}: { 
+  onExplore?: () => void
+  onConsultation?: () => void 
+}) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -50,7 +56,10 @@ export const Hero = ({ onExplore }: { onExplore?: () => void }) => {
             <button onClick={onExplore} className="hero-cta px-8 py-4 bg-accent text-primary font-semibold tracking-widest uppercase text-sm hover:bg-white transition-colors duration-300">
               Explore Our Elevators
             </button>
-            <button className="hero-cta px-8 py-4 border border-white/20 text-white font-semibold tracking-widest uppercase text-sm hover:border-accent hover:text-accent transition-colors duration-300 backdrop-blur-sm bg-primary/10">
+            <button 
+              onClick={onConsultation} 
+              className="hero-cta px-8 py-4 border border-white/20 text-white font-semibold tracking-widest uppercase text-sm hover:border-accent hover:text-accent transition-colors duration-300 backdrop-blur-sm bg-primary/10"
+            >
               Book a Consultation
             </button>
           </div>
