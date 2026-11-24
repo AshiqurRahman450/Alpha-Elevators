@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Phone, Mail, MapPin, Clock, ArrowRight, MessageSquare, CheckCircle, Navigation, ShieldCheck, Headphones, ExternalLink } from 'lucide-react'
+import emailjs from '@emailjs/browser'
+import { 
+  Phone, Mail, MapPin, Clock, ArrowRight, MessageSquare, CheckCircle, CheckCircle2,
+  Navigation, ShieldCheck, Headphones, ExternalLink, AlertCircle, 
+  Loader2, RefreshCw, Shield, Lock, Sparkles, RotateCcw, Home, ArrowLeft
+} from 'lucide-react'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -10,7 +15,65 @@ interface ContactPageProps {
   scrollToForm?: boolean
   initialPropertyType?: string
   initialNotes?: string
+  initialCity?: string
 }
+
+// Environment / Configured EmailJS credentials with user-provided keys
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'Iv0FnEdA-N9p_UBnI'
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_pzv3str'
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_tmccigb'
+const EMAILJS_AUTOREPLY_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID || 'template_dm1zsef'
+const RECIPIENT_EMAIL = import.meta.env.VITE_RECIPIENT_EMAIL || 'alphaelevators01@gmail.com'
+
+// Known disposable/temporary email domains to prevent spam
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com',
+  'tempmail.com',
+  'guerrillamail.com',
+  '10minutemail.com',
+  'yopmail.com',
+  'throwawaymail.com',
+  'sharklasers.com',
+  'trashmail.com',
+  'getairmail.com',
+  'temp-mail.org',
+  'dispostable.com',
+  'maildrop.cc'
+])
+
+// Dummy repeating or sequential phone numbers
+const DUMMY_PHONES = new Set([
+  '0000000000',
+  '1111111111',
+  '2222222222',
+  '3333333333',
+  '4444444444',
+  '5555555555',
+  '6666666666',
+  '7777777777',
+  '8888888888',
+  '9999999999',
+  '1234567890',
+  '0123456789',
+  '9876543210'
+])
+
+// Spam keywords commonly injected by bots
+const SPAM_PATTERNS = [
+  /viagra/i,
+  /casino/i,
+  /crypto(currency)?/i,
+  /bitcoin/i,
+  /porn(o)?/i,
+  /telegram\s*:/i,
+  /t\.me\//i,
+  /dating/i,
+  /seo\s*(services|ranking|backlinks)/i,
+  /buy\s*(followers|likes)/i,
+  /<script/i,
+  /\[url=/i,
+  /<a\s+href=/i
+]
 
 const offices = [
   {
@@ -54,24 +117,48 @@ const offices = [
   }
 ]
 
+// Generate dynamic math problem for anti-bot verification
+const generateCaptcha = () => {
+  const numA = Math.floor(Math.random() * 8) + 2 // 2 to 9
+  const numB = Math.floor(Math.random() * 8) + 1 // 1 to 8
+  return { numA, numB, answer: numA + numB }
+}
+
 export const ContactPage = ({ 
   onBack, 
   scrollToForm = false, 
   initialPropertyType, 
-  initialNotes 
+  initialNotes,
+  initialCity
 }: ContactPageProps) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [selectedOffice, setSelectedOffice] = useState(offices[0])
-  const [formSubmitted, setFormSubmitted] = useState(false)
+  
+  // Form State
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     email: '',
-    city: 'Chennai',
+    city: initialCity || 'Chennai',
     propertyType: initialPropertyType || 'Luxury Villa',
     stops: '2 Stops',
     message: initialNotes || ''
   })
+
+  // Anti-Spam Security States
+  const [honeypot, setHoneypot] = useState('')
+  const [captcha, setCaptcha] = useState(generateCaptcha)
+  const [captchaInput, setCaptchaInput] = useState('')
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [referenceId, setReferenceId] = useState('')
+
+  // Track initial mount timestamp to prevent instant bot submissions (< 2.5s)
+  const formLoadTime = useRef(Date.now())
+  const lastSubmitAttempt = useRef(0)
 
   useEffect(() => {
     if (scrollToForm) {
@@ -92,12 +179,20 @@ export const ContactPage = ({
     if (initialPropertyType) {
       setFormData(prev => ({ ...prev, propertyType: initialPropertyType }))
     }
-  }, [initialNotes, initialPropertyType])
+    if (initialCity) {
+      setFormData(prev => ({ ...prev, city: initialCity }))
+      const matched = offices.find(o => o.city.toLowerCase() === initialCity.toLowerCase())
+      if (matched) {
+        setSelectedOffice(matched)
+      }
+    }
+  }, [initialNotes, initialPropertyType, initialCity])
 
   useEffect(() => {
     if (!scrollToForm) {
       window.scrollTo(0, 0)
     }
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ delay: 0.2 })
       tl.fromTo('.cp-hero-tag', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
@@ -125,9 +220,502 @@ export const ContactPage = ({
     return () => ctx.revert()
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ─── Field Validation Functions ───
+  const validateField = (field: string, value: string): string => {
+    const trimmed = value.trim()
+
+    switch (field) {
+      case 'name': {
+        if (!trimmed) return 'Full name is required.'
+        if (trimmed.length < 2) return 'Name must be at least 2 characters.'
+        if (trimmed.length > 50) return 'Name cannot exceed 50 characters.'
+        // Only allow letters, spaces, hyphens, periods, apostrophes
+        if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) {
+          return 'Name can only contain alphabetic letters and spaces.'
+        }
+        // Reject links or spam patterns inside name
+        if (SPAM_PATTERNS.some(rx => rx.test(trimmed)) || /https?:\/\/|www\./i.test(trimmed)) {
+          return 'Invalid name format detected.'
+        }
+        return ''
+      }
+
+      case 'phone': {
+        if (!trimmed) return 'Phone number is required.'
+        const cleanDigits = trimmed.replace(/\D/g, '')
+
+        if (cleanDigits.length < 10) {
+          return 'Phone number must have at least 10 digits.'
+        }
+        if (cleanDigits.length > 15) {
+          return 'Phone number cannot exceed 15 digits.'
+        }
+        if (DUMMY_PHONES.has(cleanDigits) || DUMMY_PHONES.has(cleanDigits.slice(-10))) {
+          return 'Please provide a valid, active telephone number.'
+        }
+        // If standard 10-digit Indian number, ensure first digit is 6, 7, 8, or 9
+        if (cleanDigits.length === 10 && !/^[6-9]\d{9}$/.test(cleanDigits)) {
+          return 'Valid Indian mobile numbers must start with 6, 7, 8, or 9.'
+        }
+        return ''
+      }
+
+      case 'email': {
+        if (!trimmed) return 'Email address is required.'
+        // Standard RFC 5322 email regex
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+        if (!emailRegex.test(trimmed)) {
+          return 'Please enter a valid email address (e.g. name@domain.com).'
+        }
+        const domain = trimmed.split('@')[1]?.toLowerCase()
+        if (domain && DISPOSABLE_DOMAINS.has(domain)) {
+          return 'Disposable or temporary email providers are not accepted.'
+        }
+        return ''
+      }
+
+      case 'message': {
+        if (!trimmed) return '' // optional field
+        if (trimmed.length > 600) {
+          return 'Project notes cannot exceed 600 characters.'
+        }
+        // Scan for malicious spam URLs or spam tokens
+        if (/https?:\/\/|www\./i.test(trimmed)) {
+          return 'For security, external URLs are not permitted. Please describe your specifications in text.'
+        }
+        if (SPAM_PATTERNS.some(rx => rx.test(trimmed))) {
+          return 'Your message contains prohibited spam keywords.'
+        }
+        return ''
+      }
+
+      case 'captcha': {
+        if (!trimmed) return 'Please answer the security math check.'
+        const parsed = parseInt(trimmed, 10)
+        if (isNaN(parsed) || parsed !== captcha.answer) {
+          return `Incorrect answer. Please solve: ${captcha.numA} + ${captcha.numB}.`
+        }
+        return ''
+      }
+
+      default:
+        return ''
+    }
+  }
+
+  // Handle Input Changes with immediate clear of errors if fixed
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (touchedFields[field]) {
+      const err = validateField(field, value)
+      setFormErrors(prev => {
+        const next = { ...prev }
+        if (err) next[field] = err
+        else delete next[field]
+        return next
+      })
+    }
+  }
+
+  const handleBlur = (field: string, value: string) => {
+    setTouchedFields(prev => ({ ...prev, [field]: true }))
+    const err = validateField(field, value)
+    setFormErrors(prev => {
+      const next = { ...prev }
+      if (err) next[field] = err
+      else delete next[field]
+      return next
+    })
+  }
+
+  // Handle Form Submission with Anti-Spam Gate & EmailJS
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setFormSubmitted(true)
+    setSubmitError(null)
+
+    // ── 1. Honeypot Bot Trap ──
+    if (honeypot.trim().length > 0) {
+      console.warn('Bot submission blocked via honeypot trap.')
+      // Silently pretend to succeed to prevent bot adaptation
+      setFormSubmitted(true)
+      return
+    }
+
+    // ── 2. Time Trap (Human takes at least 2.5s to read & type) ──
+    const elapsedSeconds = (Date.now() - formLoadTime.current) / 1000
+    if (elapsedSeconds < 2.5) {
+      setSubmitError('Verification alert: Form submitted unnaturally fast. Please review your entries.')
+      return
+    }
+
+    // ── 3. Cooldown / Duplicate Submission Guard ──
+    const now = Date.now()
+    if (now - lastSubmitAttempt.current < 12000) {
+      setSubmitError('Please wait a few moments before sending another consultation request.')
+      return
+    }
+    lastSubmitAttempt.current = now
+
+    // ── 4. Full Field Validations ──
+    const errors: Record<string, string> = {}
+    const nameErr = validateField('name', formData.name)
+    if (nameErr) errors.name = nameErr
+
+    const phoneErr = validateField('phone', formData.phone)
+    if (phoneErr) errors.phone = phoneErr
+
+    const emailErr = validateField('email', formData.email)
+    if (emailErr) errors.email = emailErr
+
+    const msgErr = validateField('message', formData.message)
+    if (msgErr) errors.message = msgErr
+
+    const captchaErr = validateField('captcha', captchaInput)
+    if (captchaErr) errors.captcha = captchaErr
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      setTouchedFields({
+        name: true,
+        phone: true,
+        email: true,
+        message: true,
+        captcha: true
+      })
+      setSubmitError('Please correct the highlighted form errors before submitting.')
+      return
+    }
+
+    // ── 5. EmailJS Transmission to alphaelevators01@gmail.com ──
+    setIsSubmitting(true)
+    try {
+      const templateParams = {
+        name: formData.name.trim(),
+        from_name: formData.name.trim(),
+        user_name: formData.name.trim(),
+        email: formData.email.trim(),
+        from_email: formData.email.trim(),
+        user_email: formData.email.trim(),
+        reply_to: formData.email.trim(),
+        customer_email: formData.email.trim(),
+        customer_name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        phone_number: formData.phone.trim(),
+        city: formData.city,
+        property_type: formData.propertyType,
+        stops: formData.stops,
+        floors: formData.stops,
+        message: formData.message.trim() || 'No specific architectural notes provided.',
+        to_email: RECIPIENT_EMAIL,
+        recipient: RECIPIENT_EMAIL,
+        admin_email: RECIPIENT_EMAIL,
+        submission_time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+      }
+
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_PUBLIC_KEY
+      )
+
+      // ── 6. Auto-Reply Confirmation to Customer via Second Template ──
+      if (EMAILJS_AUTOREPLY_TEMPLATE_ID) {
+        try {
+          const customerEmail = formData.email.trim()
+          const customerName = formData.name.trim()
+
+          const autoReplyParams = {
+            // Recipient Email addresses (covers all template variations)
+            to_email: customerEmail,
+            email: customerEmail,
+            from_email: customerEmail,
+            customer_email: customerEmail,
+            user_email: customerEmail,
+            recipient: customerEmail,
+            recipient_email: customerEmail,
+            client_email: customerEmail,
+
+            // Recipient Names
+            to_name: customerName,
+            name: customerName,
+            customer_name: customerName,
+            client_name: customerName,
+            user_name: customerName,
+            from_name: 'Alpha Elevators',
+
+            // Inquiry details for summary
+            phone_number: formData.phone.trim(),
+            phone: formData.phone.trim(),
+            city: formData.city,
+            property_type: formData.propertyType,
+            stops: formData.stops,
+            floors: formData.stops,
+            message: formData.message.trim() || 'No specific architectural notes provided.',
+            reply_to: RECIPIENT_EMAIL,
+            company_phone: '+91 80151 29224',
+            company_email: 'info@alphaelevators.in',
+            submission_time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+          }
+
+          await emailjs.send(
+            EMAILJS_SERVICE_ID,
+            EMAILJS_AUTOREPLY_TEMPLATE_ID,
+            autoReplyParams,
+            EMAILJS_PUBLIC_KEY
+          )
+        } catch (autoErr) {
+          console.warn('Customer confirmation dispatch note:', autoErr)
+        }
+      }
+
+      const generatedRef = 'AE-' + Math.floor(100000 + Math.random() * 900000)
+      setReferenceId(generatedRef)
+      setFormSubmitted(true)
+      setIsSubmitting(false)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (err: any) {
+      console.error('EmailJS Submission Error:', err)
+      setIsSubmitting(false)
+      const errorMsg = err?.text || err?.message || 'Email delivery service encountered an issue.'
+      setSubmitError(
+        `EmailJS Notice: ${errorMsg}. Your consultation details are ready; you can dispatch immediately via WhatsApp or direct email below.`
+      )
+    }
+  }
+
+  const handleResetForm = () => {
+    setFormSubmitted(false)
+    setReferenceId('')
+    setFormData({
+      name: '',
+      phone: '',
+      email: '',
+      city: initialCity || 'Chennai',
+      propertyType: initialPropertyType || 'Luxury Villa',
+      stops: '2 Stops',
+      message: ''
+    })
+    setCaptcha(generateCaptcha())
+    setCaptchaInput('')
+    setFormErrors({})
+    setTouchedFields({})
+    setSubmitError(null)
+    formLoadTime.current = Date.now()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // ─── Attractive Full-Page Confirmation / Thank You Screen ───
+  if (formSubmitted) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white w-full overflow-x-hidden font-sans relative selection:bg-accent selection:text-primary">
+        {/* Architectural Ambient Gradient & Grid Background */}
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/15 via-[#080808] to-[#040404] pointer-events-none" />
+        <div className="fixed inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none" />
+
+        {/* Floating Ambient Glowing Halo */}
+        <div className="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-[140px] pointer-events-none animate-pulse" />
+
+        {/* Top Header */}
+        <header className="relative z-30 w-full px-6 md:px-12 py-5 flex items-center justify-between border-b border-white/5 backdrop-blur-md bg-black/30">
+          <button 
+            onClick={onBack}
+            className="flex items-center gap-3 text-white/70 hover:text-white transition-colors group cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center group-hover:border-accent group-hover:bg-accent/10 transition-all">
+              <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
+            </div>
+            <span className="text-xs font-mono tracking-widest uppercase hidden sm:inline">Return to Home</span>
+          </button>
+
+          <div className="flex items-center gap-4">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-mono tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>Priority Technical Queue</span>
+            </span>
+            <img src="/logo.png" alt="Alpha Elevators" className="h-7 opacity-85" />
+          </div>
+        </header>
+
+        {/* Main Content Container */}
+        <main className="relative z-20 max-w-5xl mx-auto px-6 py-12 md:py-16 flex flex-col items-center">
+          
+          {/* Animated Hero Concentric Checkmark */}
+          <div className="relative mb-8 flex items-center justify-center">
+            <div className="absolute w-28 h-28 rounded-full border border-accent/20 animate-ping opacity-50" />
+            <div className="absolute w-24 h-24 rounded-full border border-accent/40 animate-pulse" />
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-accent/20 to-accent/5 border-2 border-accent flex items-center justify-center shadow-[0_0_50px_rgba(0,204,204,0.4)]">
+              <CheckCircle2 size={42} className="text-accent" strokeWidth={1.8} />
+            </div>
+          </div>
+
+          {/* Reference Badge */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 text-accent font-mono text-xs tracking-[0.25em] uppercase mb-4 shadow-[0_0_20px_rgba(0,204,204,0.15)]">
+            <Sparkles size={13} className="animate-pulse" />
+            <span>Ref: {referenceId || 'AE-849201'} &bull; Confirmed</span>
+          </div>
+
+          {/* Headline */}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-display font-light text-center uppercase tracking-tight text-white mb-4 max-w-3xl leading-[1.05]">
+            Thank You, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-accent font-normal">{formData.name || 'Valued Client'}</span>.
+          </h1>
+
+          <p className="text-metal text-base sm:text-lg md:text-xl font-light text-center max-w-2xl leading-relaxed mb-12">
+            Your architectural consultation request has been successfully dispatched and routed to our Senior Engineering Desk.
+          </p>
+
+          {/* Specifications Glass Card */}
+          <div className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-6 sm:p-10 backdrop-blur-xl mb-12 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-accent via-accent/40 to-transparent" />
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-white/10 gap-3">
+              <div>
+                <span className="text-[10px] font-mono tracking-[0.25em] text-accent uppercase block">Consultation Overview</span>
+                <h3 className="text-xl font-display font-light text-white mt-1">Submitted Project Specifications</h3>
+              </div>
+              <span className="text-xs font-mono text-white/50">
+                Routed to: <strong className="text-white/80">{RECIPIENT_EMAIL}</strong>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-left">
+              <div>
+                <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Client Name</span>
+                <span className="text-sm md:text-base text-white font-medium block truncate">{formData.name}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Phone Number</span>
+                <span className="text-sm md:text-base text-accent font-mono block">{formData.phone}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Target City</span>
+                <span className="text-sm md:text-base text-white font-medium block">{formData.city}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Configuration</span>
+                <span className="text-sm md:text-base text-white font-medium block">{formData.stops}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 mt-6 border-t border-white/5 text-left">
+              <div>
+                <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Property Type</span>
+                <span className="text-sm text-white/80 font-light block">{formData.propertyType}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Registered Email</span>
+                <span className="text-sm text-white/80 font-mono block">{formData.email}</span>
+              </div>
+            </div>
+
+            {formData.message && (
+              <div className="pt-6 mt-6 border-t border-white/5 text-left">
+                <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase block mb-1">Architectural Notes</span>
+                <p className="text-xs sm:text-sm text-white/70 font-light italic bg-black/40 p-4 rounded border border-white/5">
+                  "{formData.message}"
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Next Steps: 3-Stage Progress Timeline */}
+          <div className="w-full mb-14">
+            <h4 className="text-center font-mono text-xs uppercase tracking-[0.3em] text-white/40 mb-8">
+              What Happens Next
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              <div className="p-6 rounded-lg bg-white/[0.02] border border-emerald-500/30 flex flex-col items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest block mb-1">Step 01 &bull; Complete</span>
+                  <h5 className="text-base font-display text-white mb-1">Inquiry Dispatched</h5>
+                  <p className="text-xs text-metal font-light leading-relaxed">
+                    Your specs are in our system. A confirmation email has been dispatched to your email address.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-lg bg-white/[0.02] border border-accent/40 flex flex-col items-start gap-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-accent/5 rounded-full blur-xl pointer-events-none" />
+                <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/40 flex items-center justify-center text-accent">
+                  <Clock size={20} className="animate-spin" style={{ animationDuration: '8s' }} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-accent uppercase tracking-widest block mb-1">Step 02 &bull; In Progress</span>
+                  <h5 className="text-base font-display text-white mb-1">Technical Audit</h5>
+                  <p className="text-xs text-metal font-light leading-relaxed">
+                    Our engineering architect evaluates shaft dimensions, pitless readiness, and civil structural clearances.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-lg bg-white/[0.02] border border-white/10 flex flex-col items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/15 flex items-center justify-center text-white/60">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest block mb-1">Step 03 &bull; Next</span>
+                  <h5 className="text-base font-display text-white mb-1">Engineer Callback</h5>
+                  <p className="text-xs text-metal font-light leading-relaxed">
+                    Within 2 business hours, you will receive a direct call / WhatsApp message with itemized pricing &amp; 3D renders.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-xl">
+            <a 
+              href="https://wa.me/918015129224?text=Hi%20Alpha%20Elevators%2C%20I%20just%20submitted%20a%20consultation%20request%20online%20and%20would%20like%20to%20connect%20with%20an%20engineer."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto flex-1 py-4 px-6 rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25 transition-all text-xs font-semibold uppercase tracking-[0.2em] flex items-center justify-center gap-2.5"
+            >
+              <MessageSquare size={16} />
+              <span>Priority WhatsApp</span>
+            </a>
+
+            <a 
+              href="tel:+918015129224"
+              className="w-full sm:w-auto flex-1 py-4 px-6 rounded bg-accent text-primary hover:bg-white transition-all text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 shadow-[0_0_30px_rgba(0,204,204,0.3)]"
+            >
+              <Phone size={15} />
+              <span>Call +91 80151 29224</span>
+            </a>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-8">
+            <button 
+              onClick={handleResetForm}
+              className="text-xs font-mono text-white/60 hover:text-accent uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <RotateCcw size={13} />
+              <span>Submit Another Request</span>
+            </button>
+
+            {onBack && (
+              <>
+                <span className="text-white/20">&bull;</span>
+                <button 
+                  onClick={onBack}
+                  className="text-xs font-mono text-white/60 hover:text-accent uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Home size={13} />
+                  <span>Explore Alpha Home</span>
+                </button>
+              </>
+            )}
+          </div>
+
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -159,6 +747,11 @@ export const ContactPage = ({
           border-color: #00cccc;
           background: rgba(0, 204, 204, 0.04);
           box-shadow: 0 0 20px rgba(0, 204, 204, 0.15);
+        }
+        .cp-input-group input.has-error, .cp-input-group textarea.has-error {
+          border-color: rgba(248, 113, 113, 0.7);
+          background: rgba(248, 113, 113, 0.04);
+          box-shadow: 0 0 15px rgba(248, 113, 113, 0.15);
         }
         .cp-input-group select option {
           background: #0d0d0d;
@@ -235,7 +828,7 @@ export const ContactPage = ({
               </a>
               <a 
                 href="https://wa.me/918015129224?text=Hi%20Alpha%20Elevators%2C%20I%20would%20like%20to%20enquire%20about%20a%20luxury%20home%20elevator."
-                target="_blank"
+                target="_blank" 
                 rel="noopener noreferrer"
                 className="cp-quick-badge flex items-center gap-3 px-6 py-3 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-xs tracking-[0.18em] uppercase hover:bg-emerald-500/20 transition-all duration-300"
               >
@@ -363,7 +956,7 @@ export const ContactPage = ({
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          INTERACTIVE CONSULTATION FORM + DIRECT ASSISTANCE
+          INTERACTIVE CONSULTATION FORM + ANTI-SPAM PROTECTED
       ═══════════════════════════════════════════════════ */}
       <section className="cp-form-section py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-secondary relative overflow-hidden border-t border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-accent/5 via-transparent to-transparent pointer-events-none" />
@@ -373,70 +966,148 @@ export const ContactPage = ({
             
             {/* Form Column (7 cols) */}
             <div id="contact-form" className="cp-form-container lg:col-span-7 bg-[#0a0a0a] border border-white/10 p-8 md:p-14 rounded-sm relative shadow-2xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-[1px] bg-accent"></div>
-                <span className="text-accent tracking-[0.25em] text-xs uppercase font-mono">Custom Proposal</span>
+              
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-[1px] bg-accent"></div>
+                  <span className="text-accent tracking-[0.25em] text-xs uppercase font-mono">Custom Proposal</span>
+                </div>
+
+                {/* Anti-Spam Security Indicator Badge */}
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/25 bg-accent/5 text-[10px] font-mono tracking-wider text-accent uppercase">
+                  <Shield size={12} className="text-accent" />
+                  <span>Spam-Protected Gate</span>
+                </div>
               </div>
 
               <h3 className="text-3xl md:text-4xl font-display font-light text-white mb-3">
                 Request an <span className="italic font-sans text-metal">Architectural Consultation</span>
               </h3>
-              <p className="text-metal text-sm font-light leading-relaxed mb-10">
+              <p className="text-metal text-sm font-light leading-relaxed mb-8">
                 Share your property specifications for a customized shaft feasibility assessment, 3D render preview, and itemized quotation.
               </p>
 
-              {formSubmitted ? (
-                <div className="py-16 text-center flex flex-col items-center justify-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent flex items-center justify-center text-accent mb-2">
-                    <CheckCircle size={32} strokeWidth={1.5} />
+              <form onSubmit={handleSubmit} noValidate className="space-y-6">
+                  
+                  {/* ─── Anti-Spam Hidden Honeypot Field ─── */}
+                  <div className="hidden opacity-0 pointer-events-none absolute -left-[9999px]" aria-hidden="true">
+                    <label htmlFor="company_website">Leave this field blank</label>
+                    <input 
+                      id="company_website"
+                      type="text" 
+                      name="company_website" 
+                      value={honeypot} 
+                      onChange={(e) => setHoneypot(e.target.value)} 
+                      tabIndex={-1} 
+                      autoComplete="off" 
+                    />
                   </div>
-                  <h4 className="text-2xl font-display font-light text-white">Consultation Request Received</h4>
-                  <p className="text-metal text-sm font-light max-w-md">
-                    Thank you, <span className="text-white font-medium">{formData.name || 'Valued Client'}</span>. A Senior Lift Engineer from our {formData.city} office will contact you within 2 business hours.
-                  </p>
-                  <button 
-                    onClick={() => setFormSubmitted(false)}
-                    className="mt-6 px-8 py-3 border border-white/20 text-xs tracking-[0.2em] uppercase hover:border-accent hover:text-accent transition-colors"
-                  >
-                    Submit Another Request
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
+
+                  {/* Submission Error Alert */}
+                  {submitError && (
+                    <div className="p-4 rounded-sm border border-red-500/40 bg-red-950/20 text-red-300 text-xs leading-relaxed flex flex-col gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                        <span>{submitError}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-red-500/20">
+                        <a 
+                          href={`mailto:${RECIPIENT_EMAIL}?subject=Alpha%20Elevator%20Inquiry%20from%20${encodeURIComponent(formData.name || 'Client')}&body=Name:%20${encodeURIComponent(formData.name)}%0D%0APhone:%20${encodeURIComponent(formData.phone)}%0D%0ACity:%20${encodeURIComponent(formData.city)}%0D%0AProperty:%20${encodeURIComponent(formData.propertyType)}%0D%0AFloors:%20${encodeURIComponent(formData.stops)}%0D%0ANotes:%20${encodeURIComponent(formData.message)}`}
+                          className="px-3.5 py-1.5 rounded bg-white/10 hover:bg-white/20 text-white text-[11px] font-mono tracking-wider transition-colors inline-flex items-center gap-1.5"
+                        >
+                          <Mail size={12} />
+                          <span>Dispatch Directly via Email</span>
+                        </a>
+                        <a 
+                          href={`https://wa.me/918015129224?text=Hi%20Alpha%20Elevators%2C%20I%20am%20${encodeURIComponent(formData.name || 'a client')}%20from%20${encodeURIComponent(formData.city)}.%20I%20would%20like%20a%20consultation%20for%20a%20${encodeURIComponent(formData.propertyType)}%20(${encodeURIComponent(formData.stops)}).`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3.5 py-1.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 text-[11px] font-mono tracking-wider transition-colors inline-flex items-center gap-1.5"
+                        >
+                          <MessageSquare size={12} />
+                          <span>Send via WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Row 1: Full Name & Phone Number */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="cp-input-group space-y-2">
-                      <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Full Name *</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Full Name *</label>
+                        {touchedFields.name && !formErrors.name && (
+                          <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">Valid</span>
+                        )}
+                      </div>
                       <input 
                         type="text" 
                         required 
                         placeholder="e.g. Anandha Krishnan"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        onBlur={(e) => handleBlur('name', e.target.value)}
+                        className={touchedFields.name && formErrors.name ? 'has-error' : ''}
                       />
+                      {touchedFields.name && formErrors.name && (
+                        <div className="flex items-center gap-1.5 text-xs text-red-400 pt-1 font-sans">
+                          <AlertCircle size={13} className="shrink-0" />
+                          <span>{formErrors.name}</span>
+                        </div>
+                      )}
                     </div>
+
                     <div className="cp-input-group space-y-2">
-                      <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Phone Number *</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Phone Number *</label>
+                        {touchedFields.phone && !formErrors.phone && (
+                          <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">Valid</span>
+                        )}
+                      </div>
                       <input 
                         type="tel" 
                         required 
                         placeholder="+91 98765 43210"
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        onBlur={(e) => handleBlur('phone', e.target.value)}
+                        className={touchedFields.phone && formErrors.phone ? 'has-error' : ''}
                       />
+                      {touchedFields.phone && formErrors.phone && (
+                        <div className="flex items-center gap-1.5 text-xs text-red-400 pt-1 font-sans">
+                          <AlertCircle size={13} className="shrink-0" />
+                          <span>{formErrors.phone}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
+                  {/* Row 2: Email Address & Location */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="cp-input-group space-y-2">
-                      <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Email Address *</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Email Address *</label>
+                        {touchedFields.email && !formErrors.email && (
+                          <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">Valid</span>
+                        )}
+                      </div>
                       <input 
                         type="email" 
                         required 
                         placeholder="anand@example.com"
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        onBlur={(e) => handleBlur('email', e.target.value)}
+                        className={touchedFields.email && formErrors.email ? 'has-error' : ''}
                       />
+                      {touchedFields.email && formErrors.email && (
+                        <div className="flex items-center gap-1.5 text-xs text-red-400 pt-1 font-sans">
+                          <AlertCircle size={13} className="shrink-0" />
+                          <span>{formErrors.email}</span>
+                        </div>
+                      )}
                     </div>
+
                     <div className="cp-input-group space-y-2">
                       <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Location / City</label>
                       <select 
@@ -453,6 +1124,7 @@ export const ContactPage = ({
                     </div>
                   </div>
 
+                  {/* Row 3: Property Type & Stops */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="cp-input-group space-y-2">
                       <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Property Type</label>
@@ -467,6 +1139,7 @@ export const ContactPage = ({
                         <option value="Glass Elevator Showcase">Glass Panoramic Lift</option>
                       </select>
                     </div>
+
                     <div className="cp-input-group space-y-2">
                       <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Number of Floors</label>
                       <select 
@@ -481,27 +1154,138 @@ export const ContactPage = ({
                     </div>
                   </div>
 
+                  {/* Row 4: Project Notes with Character Counter */}
                   <div className="cp-input-group space-y-2">
-                    <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">Project Notes / Architectural Requirements</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-[11px] font-mono tracking-widest text-white/60 uppercase">
+                        Project Notes / Architectural Requirements
+                      </label>
+                      <span className="text-[10px] font-mono text-white/40">
+                        {formData.message.length}/600
+                      </span>
+                    </div>
                     <textarea 
                       rows={3} 
                       placeholder="Mention any shaft constraints, glass design preferences, or site dimensions..."
                       value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      maxLength={600}
+                      onChange={(e) => handleInputChange('message', e.target.value)}
+                      onBlur={(e) => handleBlur('message', e.target.value)}
+                      className={touchedFields.message && formErrors.message ? 'has-error' : ''}
                     />
+                    {touchedFields.message && formErrors.message && (
+                      <div className="flex items-center gap-1.5 text-xs text-red-400 pt-1 font-sans">
+                        <AlertCircle size={13} className="shrink-0" />
+                        <span>{formErrors.message}</span>
+                      </div>
+                    )}
                   </div>
 
+                  {/* ─── Row 5: Anti-Spam Human Verification Challenge ─── */}
+                  <div className="p-4 bg-white/[0.02] border border-white/10 rounded-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Lock size={13} className="text-accent" />
+                        <span className="text-[11px] font-mono tracking-widest text-white/80 uppercase font-semibold">
+                          Human Verification Check *
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-accent/80 tracking-wider">
+                        Anti-Bot Gate
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex items-center gap-2 px-4 py-2.5 rounded bg-black/60 border border-white/15 text-sm font-mono tracking-wider text-white">
+                        <span>Calculate: <strong className="text-accent font-semibold">{captcha.numA} + {captcha.numB}</strong> =</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCaptcha(generateCaptcha())
+                            setCaptchaInput('')
+                            setFormErrors(prev => {
+                              const next = { ...prev }
+                              delete next.captcha
+                              return next
+                            })
+                          }}
+                          title="Generate new calculation"
+                          className="ml-2 text-white/40 hover:text-accent transition-colors cursor-pointer"
+                        >
+                          <RefreshCw size={13} />
+                        </button>
+                      </div>
+
+                      <div className="flex-1">
+                        <input 
+                          type="text" 
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          placeholder="Enter result..."
+                          value={captchaInput}
+                          onChange={(e) => {
+                            setCaptchaInput(e.target.value)
+                            if (touchedFields.captcha) {
+                              const err = validateField('captcha', e.target.value)
+                              setFormErrors(prev => {
+                                const next = { ...prev }
+                                if (err) next.captcha = err
+                                else delete next.captcha
+                                return next
+                              })
+                            }
+                          }}
+                          onBlur={(e) => {
+                            setTouchedFields(prev => ({ ...prev, captcha: true }))
+                            const err = validateField('captcha', e.target.value)
+                            setFormErrors(prev => {
+                              const next = { ...prev }
+                              if (err) next.captcha = err
+                              else delete next.captcha
+                              return next
+                            })
+                          }}
+                          className={`w-full !py-2.5 !px-3.5 text-sm font-mono bg-white/[0.03] border border-white/10 rounded text-white outline-none focus:border-accent ${
+                            touchedFields.captcha && formErrors.captcha ? '!border-red-500/70 !bg-red-950/20' : ''
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    {touchedFields.captcha && formErrors.captcha && (
+                      <div className="flex items-center gap-1.5 text-xs text-red-400 font-sans">
+                        <AlertCircle size={13} className="shrink-0" />
+                        <span>{formErrors.captcha}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Submit Button */}
                   <div className="pt-2">
                     <button 
                       type="submit"
-                      className="w-full py-4 px-8 bg-accent text-primary font-semibold tracking-[0.25em] uppercase text-xs hover:bg-white transition-all duration-300 flex items-center justify-center gap-4 group"
+                      disabled={isSubmitting}
+                      className="w-full py-4 px-8 bg-accent text-primary font-semibold tracking-[0.25em] uppercase text-xs hover:bg-white transition-all duration-300 flex items-center justify-center gap-4 group disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
-                      <span>Submit Consultation Request</span>
-                      <ArrowRight size={16} strokeWidth={2} className="transform group-hover:translate-x-1.5 transition-transform duration-300" />
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin text-primary" />
+                          <span>Routing to Alpha Engineering...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Submit Consultation Request</span>
+                          <ArrowRight size={16} strokeWidth={2} className="transform group-hover:translate-x-1.5 transition-transform duration-300" />
+                        </>
+                      )}
                     </button>
+                    <div className="flex items-center justify-center gap-2 mt-3 text-[10px] font-mono tracking-widest text-white/40 uppercase">
+                      <Lock size={11} className="text-accent/60" />
+                      <span>Encrypted SSL &bull; Instant Delivery to {RECIPIENT_EMAIL}</span>
+                    </div>
                   </div>
+
                 </form>
-              )}
             </div>
 
             {/* Assistance & Details (5 cols) */}
@@ -664,7 +1448,7 @@ export const ContactPage = ({
               </p>
               <a 
                 href={`https://maps.google.com/?q=${selectedOffice.mapQuery}`}
-                target="_blank"
+                target="_blank" 
                 rel="noopener noreferrer"
                 className="px-6 py-2.5 border border-accent/40 bg-accent/10 text-accent text-xs tracking-[0.2em] uppercase font-semibold hover:bg-accent hover:text-primary transition-all duration-300 flex items-center gap-2"
               >

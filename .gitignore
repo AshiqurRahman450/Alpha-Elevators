@@ -11,6 +11,24 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+
+# Large backup / unused raw 3D & media files
+*.original.bak
+public/lifts/Lift3D
+public/lifts/Untitled (1)
+public/lifts/Untitled (1).glb
+public/lifts/Untitled.glb
+public/lifts/Interior 2 (1).glb
+public/lifts/Interior 2.glb
+public/lifts/White interior.glb
+public/lifts/white.glb
+public/lifts/soft black.glb
+public/lifts/main-white.glb
+public/small_empty_room.exr
+public/small_empty_room_3_4k.exr
+src/assets/Overall.mp4
+src/assets/Black Overall.mp4
 
 # Editor directories and files
 .vscode/*

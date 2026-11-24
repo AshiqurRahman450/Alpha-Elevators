@@ -29,6 +29,7 @@ export type LocationCity = 'chennai' | 'coimbatore' | 'all'
 interface LocationsPageProps {
   onBack?: () => void
   initialCity?: LocationCity
+  onBookSurveyClick?: (city?: string, notes?: string) => void
 }
 
 /* ─── Animated Counter that triggers on every scroll ─── */
@@ -73,12 +74,29 @@ const AnimatedCounter = ({ end, suffix = '', duration = 2 }: { end: number; suff
   return <span ref={ref}>0{suffix}</span>
 }
 
-export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPageProps) => {
+export const LocationsPage = ({ 
+  onBack, 
+  initialCity = 'chennai',
+  onBookSurveyClick
+}: LocationsPageProps) => {
   const [activeTab, setActiveTab] = useState<LocationCity>(initialCity)
   const [activeFaq, setActiveFaq] = useState<number | null>(0)
   const [showQuoteModal, setShowQuoteModal] = useState(false)
   const [modalCity, setModalCity] = useState<'Chennai' | 'Coimbatore'>('Chennai')
   const [quoteSubmitted, setQuoteSubmitted] = useState(false)
+
+  const handleSurveyNavigation = (city?: string, customNotes?: string) => {
+    const selectedCityName = city || (activeTab === 'coimbatore' ? 'Coimbatore' : 'Chennai')
+    if (onBookSurveyClick) {
+      onBookSurveyClick(
+        selectedCityName,
+        customNotes || `Site Survey Request: Please schedule an on-site structural feasibility survey and shaft dimension audit in ${selectedCityName}.`
+      )
+    } else {
+      setModalCity(selectedCityName === 'Coimbatore' ? 'Coimbatore' : 'Chennai')
+      setShowQuoteModal(true)
+    }
+  }
 
   const containerRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLDivElement>(null)
@@ -390,11 +408,8 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
         {/* Right: CTA & Logo */}
         <div className="flex items-center gap-3 sm:gap-6">
           <button
-            onClick={() => {
-              setModalCity(activeTab === 'coimbatore' ? 'Coimbatore' : 'Chennai')
-              setShowQuoteModal(true)
-            }}
-            className="px-4 sm:px-6 py-2.5 bg-accent/10 border border-accent/40 text-accent hover:bg-accent hover:text-primary transition-all duration-300 rounded text-xs font-medium tracking-widest uppercase flex items-center gap-2"
+            onClick={() => handleSurveyNavigation(activeTab === 'coimbatore' ? 'Coimbatore' : 'Chennai')}
+            className="px-4 sm:px-6 py-2.5 bg-accent/10 border border-accent/40 text-accent hover:bg-accent hover:text-primary transition-all duration-300 rounded text-xs font-medium tracking-widest uppercase flex items-center gap-2 cursor-pointer"
           >
             <Calendar size={13} />
             <span className="hidden md:inline">Book Site Survey</span>
@@ -503,11 +518,8 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
             <div className="lg:col-span-6 flex flex-col gap-6">
               <div className="flex flex-wrap items-center gap-4">
                 <button
-                  onClick={() => {
-                    setModalCity(activeTab === 'coimbatore' ? 'Coimbatore' : 'Chennai')
-                    setShowQuoteModal(true)
-                  }}
-                  className="px-8 py-4 bg-accent text-primary font-bold text-xs tracking-[0.2em] uppercase rounded hover:bg-white hover:text-primary transition-all duration-300 shadow-xl shadow-accent/15 flex items-center gap-3"
+                  onClick={() => handleSurveyNavigation(activeTab === 'coimbatore' ? 'Coimbatore' : 'Chennai')}
+                  className="px-8 py-4 bg-accent text-primary font-bold text-xs tracking-[0.2em] uppercase rounded hover:bg-white hover:text-primary transition-all duration-300 shadow-xl shadow-accent/15 flex items-center gap-3 cursor-pointer"
                 >
                   <span>Request Free Site Survey</span>
                   <ChevronRight size={16} strokeWidth={2.5} />
@@ -748,11 +760,8 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
                       <p className="text-metal text-xs leading-relaxed font-light">{srv.desc}</p>
                     </div>
                     <button
-                      onClick={() => {
-                        setModalCity('Chennai')
-                        setShowQuoteModal(true)
-                      }}
-                      className="mt-6 inline-flex items-center gap-1.5 text-xs font-mono text-accent hover:underline uppercase tracking-wider"
+                      onClick={() => handleSurveyNavigation('Chennai', `Inquiry for ${srv.title} in Chennai.`)}
+                      className="mt-6 inline-flex items-center gap-1.5 text-xs font-mono text-accent hover:underline uppercase tracking-wider cursor-pointer"
                     >
                       <span>Inquire Now</span>
                       <ChevronRight size={12} />
@@ -819,11 +828,8 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
                   <span>Call +91 80151 29224</span>
                 </a>
                 <button
-                  onClick={() => {
-                    setModalCity('Chennai')
-                    setShowQuoteModal(true)
-                  }}
-                  className="px-6 py-3.5 bg-white/5 border border-white/20 text-white font-medium text-xs uppercase tracking-widest rounded hover:border-accent hover:text-accent transition-all"
+                  onClick={() => handleSurveyNavigation('Chennai')}
+                  className="px-6 py-3.5 bg-white/5 border border-white/20 text-white font-medium text-xs uppercase tracking-widest rounded hover:border-accent hover:text-accent transition-all cursor-pointer"
                 >
                   Book Free Site Visit
                 </button>
@@ -938,11 +944,8 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
                       <p className="text-metal text-xs leading-relaxed font-light">{srv.desc}</p>
                     </div>
                     <button
-                      onClick={() => {
-                        setModalCity('Coimbatore')
-                        setShowQuoteModal(true)
-                      }}
-                      className="mt-6 inline-flex items-center gap-1.5 text-xs font-mono text-accent hover:underline uppercase tracking-wider"
+                      onClick={() => handleSurveyNavigation('Coimbatore', `Inquiry for ${srv.title} in Coimbatore.`)}
+                      className="mt-6 inline-flex items-center gap-1.5 text-xs font-mono text-accent hover:underline uppercase tracking-wider cursor-pointer"
                     >
                       <span>Inquire Now</span>
                       <ChevronRight size={12} />
@@ -1047,11 +1050,8 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
                   <span>Call +91 80151 29224</span>
                 </a>
                 <button
-                  onClick={() => {
-                    setModalCity('Coimbatore')
-                    setShowQuoteModal(true)
-                  }}
-                  className="px-6 py-3.5 bg-white/5 border border-white/20 text-white font-medium text-xs uppercase tracking-widest rounded hover:border-accent hover:text-accent transition-all"
+                  onClick={() => handleSurveyNavigation('Coimbatore')}
+                  className="px-6 py-3.5 bg-white/5 border border-white/20 text-white font-medium text-xs uppercase tracking-widest rounded hover:border-accent hover:text-accent transition-all cursor-pointer"
                 >
                   Schedule Site Survey
                 </button>
@@ -1130,11 +1130,8 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
                   View Chennai Deep Details
                 </button>
                 <button
-                  onClick={() => {
-                    setModalCity('Chennai')
-                    setShowQuoteModal(true)
-                  }}
-                  className="px-6 py-3 bg-accent text-primary text-xs font-bold uppercase tracking-widest hover:bg-white transition-all rounded"
+                  onClick={() => handleSurveyNavigation('Chennai')}
+                  className="px-6 py-3 bg-accent text-primary text-xs font-bold uppercase tracking-widest hover:bg-white transition-all rounded cursor-pointer"
                 >
                   Book Survey
                 </button>
@@ -1189,11 +1186,8 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
                   View Coimbatore Deep Details
                 </button>
                 <button
-                  onClick={() => {
-                    setModalCity('Coimbatore')
-                    setShowQuoteModal(true)
-                  }}
-                  className="px-6 py-3 bg-accent text-primary text-xs font-bold uppercase tracking-widest hover:bg-white transition-all rounded"
+                  onClick={() => handleSurveyNavigation('Coimbatore')}
+                  className="px-6 py-3 bg-accent text-primary text-xs font-bold uppercase tracking-widest hover:bg-white transition-all rounded cursor-pointer"
                 >
                   Book Survey
                 </button>
@@ -1226,7 +1220,12 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
-                  setQuoteSubmitted(true)
+                  if (onBookSurveyClick) {
+                    setShowQuoteModal(false)
+                    onBookSurveyClick(modalCity)
+                  } else {
+                    setQuoteSubmitted(true)
+                  }
                 }}
                 className="flex flex-col gap-5"
               >
@@ -1330,7 +1329,7 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
       {/* ═══════════════════════════════════════════════════════════
           FLOATING QUICK CONTACT ACTION BAR (MOBILE / DESKTOP)
       ═══════════════════════════════════════════════════════════ */}
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-3">
+      {/* <div className="fixed bottom-6 right-6 z-40 flex items-center gap-3">
         <a
           href="https://wa.me/918015129224?text=Hi%20Alpha%20Elevators%2C%20I%20am%20interested%20in%20a%20home%20lift"
           target="_blank"
@@ -1348,7 +1347,7 @@ export const LocationsPage = ({ onBack, initialCity = 'chennai' }: LocationsPage
           <Phone size={14} />
           <span>+91 80151 29224</span>
         </a>
-      </div>
+      </div> */}
 
       {/* ═══════════════════════════════════════════════════════════
           FOOTER STRIP

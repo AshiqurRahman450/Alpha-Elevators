@@ -1,23 +1,7 @@
-import { useEffect, useState, Suspense } from 'react'
-import Lenis from '@studio-freight/lenis'
-import { Canvas } from '@react-three/fiber'
-import { useProgress, Environment } from '@react-three/drei'
+import { useEffect, useState } from 'react'
 import { Navbar } from './components/Navbar'
-
 import { Hero } from './components/Hero'
-import { About } from './components/About'
-import { WhyAlpha } from './components/WhyAlpha'
-import { Features } from './components/Features'
-import { ExplodedView } from './components/ExplodedView'
-import { Safety } from './components/Safety'
-import { Products } from './components/Products'
-import { Locations } from './components/Locations'
-import { Gallery } from './components/Gallery'
-import { FAQ } from './components/FAQ'
-import { Contact } from './components/Contact'
-import { Footer } from './components/Footer'
 import { CustomCursor } from './components/CustomCursor'
-import { ElevatorScene } from './components/ElevatorScene'
 import { LoadingScreen } from './components/LoadingScreen'
 import { ExplorePage } from './components/ExplorePage'
 import { AboutPage } from './components/AboutPage'
@@ -26,64 +10,85 @@ import { LocationsPage } from './components/LocationsPage'
 import type { LocationCity } from './components/LocationsPage'
 import { GalleryPage } from './components/GalleryPage'
 import { ContactPage } from './components/ContactPage'
-
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-
-gsap.registerPlugin(ScrollTrigger)
-
-// Inner component that reads the drei loading progress
-const LoadingTracker = ({ onProgress }: { onProgress: (p: number) => void }) => {
-  const { progress } = useProgress()
-  useEffect(() => {
-    onProgress(progress)
-  }, [progress, onProgress])
-  return null
-}
+import { QuickContactFloating } from './components/QuickContactFloating'
 
 function App() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isExploreMode, setIsExploreMode] = useState(false)
-  const [isAboutPage, setIsAboutPage] = useState(false)
-  const [isProductsPage, setIsProductsPage] = useState(false)
-  const [isLocationsPage, setIsLocationsPage] = useState(false)
-  const [isGalleryPage, setIsGalleryPage] = useState(false)
-  const [isContactPage, setIsContactPage] = useState(false)
+  const [isAboutPage, setIsAboutPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase()
+      return p === '/about' || p === '/about/' || window.location.hash === '#about-page'
+    }
+    return false
+  })
+  const [isProductsPage, setIsProductsPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase()
+      return p === '/products' || p === '/products/'
+    }
+    return false
+  })
+  const [isLocationsPage, setIsLocationsPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase()
+      return p === '/locations' || p === '/locations/'
+    }
+    return false
+  })
+  const [isGalleryPage, setIsGalleryPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase()
+      return p === '/gallery' || p === '/gallery/'
+    }
+    return false
+  })
+  const [isContactPage, setIsContactPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase()
+      return p === '/contact' || p === '/contact/'
+    }
+    return false
+  })
   const [contactInitialData, setContactInitialData] = useState<{
     scrollToForm?: boolean
     initialNotes?: string
     propertyType?: string
+    city?: string
   } | null>(null)
   const [selectedLocationCity, setSelectedLocationCity] = useState<LocationCity>('chennai')
 
+  // Smooth cinematic loader sequence for initial entrance
   useEffect(() => {
-    if (isExploreMode || isAboutPage || isProductsPage || isLocationsPage || isGalleryPage || isContactPage) return;
+    let current = 0
+    const interval = setInterval(() => {
+      current += 20
+      if (current >= 100) {
+        setLoadingProgress(100)
+        clearInterval(interval)
+      } else {
+        setLoadingProgress(current)
+      }
+    }, 90)
+    return () => clearInterval(interval)
+  }, [])
 
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
-    })
-
-    lenis.on('scroll', ScrollTrigger.update)
-
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000)
-    })
-
-    gsap.ticker.lagSmoothing(0)
-
+  // Lock body scroll on the home screen; re-enable scroll when viewing subpages
+  useEffect(() => {
+    const isSubpage = isExploreMode || isAboutPage || isProductsPage || isLocationsPage || isGalleryPage || isContactPage
+    if (!isSubpage) {
+      document.body.style.overflow = 'hidden'
+      window.scrollTo(0, 0)
+    } else {
+      document.body.style.overflow = ''
+    }
     return () => {
-      lenis.destroy()
-      gsap.ticker.remove(lenis.raf)
+      document.body.style.overflow = ''
     }
   }, [isExploreMode, isAboutPage, isProductsPage, isLocationsPage, isGalleryPage, isContactPage])
 
+  // Subpage: Interactive 3D Explore
   if (isExploreMode) {
     return (
       <>
@@ -100,28 +105,45 @@ function App() {
             setIsContactPage(true)
           }}
         />
+        <QuickContactFloating />
       </>
     )
   }
 
+  // Subpage: About Alpha
   if (isAboutPage) {
     return (
       <>
         <CustomCursor />
-        <AboutPage onBack={() => setIsAboutPage(false)} />
+        <AboutPage 
+          onBack={() => setIsAboutPage(false)} 
+          onConsultationClick={(notes?: string) => {
+            setIsAboutPage(false)
+            setContactInitialData({
+              scrollToForm: true,
+              propertyType: 'Architectural Luxury Villa',
+              initialNotes: notes || 'Inquiry from About Page: Request for Architectural CAD Shaft Drawings, DWG specifications & Structural Calculations.'
+            })
+            setIsContactPage(true)
+          }}
+        />
+        <QuickContactFloating />
       </>
     )
   }
 
+  // Subpage: Products Catalog & 3D Cabin Experience
   if (isProductsPage) {
     return (
       <>
         <CustomCursor />
         <ProductsPage onBack={() => setIsProductsPage(false)} />
+        <QuickContactFloating />
       </>
     )
   }
 
+  // Subpage: Locations & Experience Centers
   if (isLocationsPage) {
     return (
       <>
@@ -129,20 +151,35 @@ function App() {
         <LocationsPage 
           onBack={() => setIsLocationsPage(false)} 
           initialCity={selectedLocationCity} 
+          onBookSurveyClick={(city?: string, notes?: string) => {
+            setIsLocationsPage(false)
+            const targetCity = city ? (city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()) : 'Chennai'
+            setContactInitialData({
+              scrollToForm: true,
+              city: targetCity,
+              propertyType: 'Luxury Villa',
+              initialNotes: notes || `Request for Complimentary On-Site Survey & Shaft Feasibility Audit in ${targetCity}.`
+            })
+            setIsContactPage(true)
+          }}
         />
+        <QuickContactFloating />
       </>
     )
   }
 
+  // Subpage: Architecture & Installation Gallery
   if (isGalleryPage) {
     return (
       <>
         <CustomCursor />
         <GalleryPage onBack={() => setIsGalleryPage(false)} />
+        <QuickContactFloating />
       </>
     )
   }
 
+  // Subpage: Consultation & Contact Form
   if (isContactPage) {
     return (
       <>
@@ -155,14 +192,17 @@ function App() {
           scrollToForm={contactInitialData?.scrollToForm}
           initialNotes={contactInitialData?.initialNotes}
           initialPropertyType={contactInitialData?.propertyType}
+          initialCity={contactInitialData?.city}
         />
+        <QuickContactFloating />
       </>
     )
   }
 
+  // Home Page: Header + Full-Bleed Video Hero only (No scroll)
   return (
-    <>
-      {/* Loading Screen - shows real 3D loading progress */}
+    <div className="relative w-full h-screen h-[100dvh] overflow-hidden bg-primary select-none flex flex-col">
+      {/* Elevator Door Intro Loader */}
       {!isLoaded && (
         <LoadingScreen 
           progress={loadingProgress} 
@@ -170,8 +210,10 @@ function App() {
         />
       )}
 
+      {/* Premium Cursor */}
       <CustomCursor />
-      {/* Navbar will open the respective sub-pages when clicked */}
+
+      {/* Header / Navigation Bar */}
       <Navbar 
         onAboutClick={() => setIsAboutPage(true)} 
         onProductsClick={() => setIsProductsPage(true)} 
@@ -182,22 +224,9 @@ function App() {
         onGalleryClick={() => setIsGalleryPage(true)}
         onContactClick={() => setIsContactPage(true)}
       />
-      
-      {/* Global 3D Canvas */}
-      <div className="fixed top-0 left-0 w-full h-full -z-10 bg-primary pointer-events-none">
-        <Canvas shadows camera={{ position: [0, 0, 10], fov: 45 }}>
-          <color attach="background" args={['#050505']} />
-          <ambientLight intensity={0.5} />
-          <Suspense fallback={null}>
-            <Environment files="/potsdamer_platz_1k.hdr" />
-          </Suspense>
-          <ElevatorScene />
-          {/* Track real loading progress */}
-          <LoadingTracker onProgress={setLoadingProgress} />
-        </Canvas>
-      </div>
 
-      <main className="relative z-10 w-full overflow-hidden">
+      {/* Hero with Cinematic 0001.mp4 Background */}
+      <main className="relative flex-1 w-full h-full overflow-hidden">
         <Hero 
           onExplore={() => setIsExploreMode(true)} 
           onConsultation={() => {
@@ -205,32 +234,12 @@ function App() {
             setIsContactPage(true)
           }}
         />
-        {/* The in-page About section remains untouched */}
-        <About />
-        <WhyAlpha />
-        <Features />
-        <ExplodedView />
-        <Safety />
-        <Products />
-        <Locations onExploreLocation={(city) => {
-          setSelectedLocationCity(city)
-          setIsLocationsPage(true)
-        }} />
-        <Gallery onViewAll={() => setIsGalleryPage(true)} />
-        <FAQ />
-        <Contact />
       </main>
 
-      <Footer 
-        onLocationsClick={(city = 'all') => {
-          setSelectedLocationCity(city)
-          setIsLocationsPage(true)
-        }}
-        onContactClick={() => setIsContactPage(true)}
-      />
-    </>
+      {/* Floating Instant Contact (WhatsApp & Call) */}
+      <QuickContactFloating />
+    </div>
   )
 }
 
 export default App
-

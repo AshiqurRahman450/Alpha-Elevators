@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState, Suspense, lazy } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { 
@@ -6,8 +6,13 @@ import {
   Box, Expand, Zap, VolumeX, 
   RefreshCcw, Leaf, Maximize, TrendingUp, 
   Clock, Plug, ShieldCheck, BatteryCharging,
-  ArrowRight
+  ArrowRight, Sparkles, Image as ImageIcon
 } from 'lucide-react'
+
+// Code-split 3D cabin model viewer
+const LiftInteriorViewer = lazy(() =>
+  import('./LiftInteriorViewer').then((mod) => ({ default: mod.LiftInteriorViewer }))
+)
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -18,6 +23,7 @@ const products = [
     name: "The Pioneer",
     desc: "State-of-the-art residential elevator solution featuring ultra-smooth gearless traction, advanced safety protocols, and a customizable luxury interior crafted for modern homes.",
     image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1000&auto=format&fit=crop",
+    modelUrl: "/lifts/main white.glb",
     specs: [
       { label: "CAPACITY", value: "Up to 400 kg (5 Persons)", Icon: Users },
       { label: "SPEED", value: "0.15 m/s - 0.3 m/s", Icon: Gauge },
@@ -31,6 +37,7 @@ const products = [
     name: "The Vision",
     desc: "A cutting-edge panoramic lift system featuring 360-degree structural glass. Designed for architectural brilliance and fully compliant with European Lift Directive 2014/33/EU.",
     image: "https://images.unsplash.com/photo-1515263487990-61b07816b324?q=80&w=1000&auto=format&fit=crop",
+    modelUrl: "/lifts/main white.glb",
     specs: [
       { label: "ENCLOSURE", value: "Toughened Laminated Glass", Icon: Box },
       { label: "FOOTPRINT", value: "Compact (1m x 1m min)", Icon: Expand },
@@ -44,6 +51,7 @@ const products = [
     name: "The Silent Drive",
     desc: "Revolutionary belt-model elevator utilizing patented flat polyurethane-coated steel belts. Offers unprecedented ride smoothness, longevity, and absolutely silent operation.",
     image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=1000&auto=format&fit=crop",
+    modelUrl: "/lifts/main white.glb",
     specs: [
       { label: "DRIVE BELTS", value: "PU-Coated Steel (No Oil)", Icon: RefreshCcw },
       { label: "EFFICIENCY", value: "A-Class Energy Rating", Icon: Leaf },
@@ -57,6 +65,7 @@ const products = [
     name: "The Retrofit",
     desc: "Specifically engineered for existing structures and heritage homes. Uses an ultra-slim hydraulic drive that integrates seamlessly without requiring major architectural modifications.",
     image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=1000&auto=format&fit=crop",
+    modelUrl: "/lifts/main white.glb",
     specs: [
       { label: "INSTALLATION", value: "As fast as 48 hours", Icon: Clock },
       { label: "POWER", value: "Single Phase (230V)", Icon: Plug },
@@ -68,6 +77,8 @@ const products = [
 
 export const Products = () => {
   const sectionRef = useRef<HTMLDivElement>(null)
+  // Mount 3D WebGL Canvas strictly on demand when requested
+  const [active3DId, setActive3DId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!sectionRef.current) return
@@ -79,7 +90,7 @@ export const Products = () => {
       const imgBlock = row.querySelector('.product-img-wrapper')
       const img = row.querySelector('.product-img')
       
-      // Image Parallax
+      // Image Parallax if image exists
       if (img && imgBlock) {
         gsap.to(img, {
           yPercent: 20,
@@ -146,14 +157,15 @@ export const Products = () => {
         )
       }
       
-      // Image wrapper elegant reveal (clip-path)
-      if (imgBlock) {
-        gsap.fromTo(imgBlock,
-          { clipPath: "inset(100% 0% 0% 0%)" },
+      // Smooth hardware-accelerated image fade reveal (avoids expensive clipPath re-rasterization)
+      if (img) {
+        gsap.fromTo(img,
+          { opacity: 0, scale: 1.05 },
           {
-            clipPath: "inset(0% 0% 0% 0%)",
-            duration: 1.5,
-            ease: "power4.inOut",
+            opacity: 1,
+            scale: 1,
+            duration: 1.2,
+            ease: "power3.out",
             scrollTrigger: {
               trigger: row,
               start: "top 75%",
@@ -184,6 +196,7 @@ export const Products = () => {
         <div className="space-y-40">
           {products.map((product, idx) => {
             const isReverse = idx % 2 !== 0
+            const is3DActive = active3DId === product.id
             
             return (
               <div key={product.id} className={`product-row flex flex-col md:flex-row items-center gap-12 lg:gap-24 ${isReverse ? 'md:flex-row-reverse' : ''}`}>
@@ -227,8 +240,21 @@ export const Products = () => {
                       })}
                     </div>
 
-                    {/* Explore Link */}
-                    <div className="reveal-elem">
+                    {/* Action buttons: 3D Toggle + Explore Link */}
+                    <div className="reveal-elem flex flex-wrap items-center gap-4">
+                      <button 
+                        type="button"
+                        onClick={() => setActive3DId(is3DActive ? null : product.id)}
+                        className={`inline-flex items-center gap-2.5 px-4 py-2.5 text-xs font-display tracking-widest uppercase rounded-sm border transition-all duration-300 ${
+                          is3DActive
+                            ? 'bg-accent text-primary font-semibold border-accent shadow-[0_0_15px_rgba(0,204,204,0.35)]'
+                            : 'bg-white/5 border-white/15 text-white/80 hover:text-white hover:border-accent hover:bg-accent/10'
+                        }`}
+                      >
+                        {is3DActive ? <ImageIcon className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5 text-accent" />}
+                        <span>{is3DActive ? 'Switch to Photo' : 'Launch 3D Cabin'}</span>
+                      </button>
+
                       <button className="group inline-flex items-center gap-4 text-white hover:text-accent transition-colors duration-300">
                         <span className="text-sm tracking-[0.2em] uppercase font-light">Explore Details</span>
                         <div className="w-10 h-10 rounded-full border border-white/20 group-hover:border-accent flex items-center justify-center transition-colors duration-300">
@@ -239,14 +265,61 @@ export const Products = () => {
                   </div>
                 </div>
                 
-                {/* Image Content */}
-                <div className="product-img-wrapper w-full h-[450px] md:h-[650px] md:flex-1 relative overflow-hidden bg-graphite rounded-sm">
-                   <div className="absolute inset-0 bg-black/10 z-10 pointer-events-none transition-colors duration-700 group-hover:bg-transparent"></div>
-                   <img 
-                      src={product.image} 
-                      alt={`${product.model} - ${product.name}`} 
-                      className="product-img absolute top-[-20%] left-0 w-full h-[140%] object-cover" 
-                    />
+                {/* 3D Interactive Model / Image Container */}
+                <div className="product-img-wrapper w-full h-[450px] md:h-[650px] md:flex-1 relative overflow-hidden bg-[#06090e] rounded-sm border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.6)]">
+                  {is3DActive ? (
+                    <div className="relative w-full h-full">
+                      <Suspense
+                        fallback={
+                          <div className="w-full h-full bg-[#06090e] flex flex-col items-center justify-center">
+                            <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3" />
+                            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-accent">Loading 3D Cabin...</span>
+                          </div>
+                        }
+                      >
+                        <LiftInteriorViewer
+                          compact
+                          className="w-full h-full border-0 shadow-none"
+                          modelUrl={product.modelUrl || '/lifts/main white.glb'}
+                          productName={`${product.name} (${product.model}) — 3D Cabin`}
+                          productTagline="Main White Architectural Series"
+                          hdriUrl="/small_empty_room_3_1k.hdr"
+                        />
+                      </Suspense>
+                      <button
+                        type="button"
+                        onClick={() => setActive3DId(null)}
+                        className="absolute top-4 right-4 z-20 px-3 py-1 text-[10px] uppercase font-mono tracking-wider bg-black/70 hover:bg-white/20 text-white/80 hover:text-white border border-white/20 rounded-sm transition-all backdrop-blur-md"
+                        title="Switch to Photo View"
+                      >
+                        Photo View
+                      </button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="relative w-full h-full group/card cursor-pointer" 
+                      onClick={() => setActive3DId(product.id)}
+                    >
+                      <div className="absolute inset-0 bg-black/20 group-hover/card:bg-black/10 z-10 transition-colors duration-500"></div>
+                      <img 
+                        src={product.image} 
+                        alt={`${product.model} - ${product.name}`} 
+                        className="product-img absolute top-[-20%] left-0 w-full h-[140%] object-cover transition-transform duration-700 group-hover/card:scale-105" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent z-10 pointer-events-none" />
+                      
+                      {/* Launch 3D Simulation Overlay Pill */}
+                      <div className="absolute bottom-6 left-6 right-6 z-20 flex items-center justify-between pointer-events-none">
+                        <span className="bg-black/60 backdrop-blur-md border border-white/15 px-3 py-1.5 text-xs uppercase tracking-[0.2em] text-white flex items-center gap-2 rounded-sm group-hover/card:border-accent transition-all">
+                          <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                          <span>Interactive 3D Cabin</span>
+                        </span>
+                        <span className="px-3.5 py-1.5 text-xs uppercase font-display tracking-wider bg-accent text-primary font-semibold rounded-sm shadow-[0_0_15px_rgba(0,204,204,0.3)] group-hover/card:bg-white transition-all">
+                          Launch 3D ↗
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )

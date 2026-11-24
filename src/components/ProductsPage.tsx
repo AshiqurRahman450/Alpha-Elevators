@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react'
+import Lenis from '@studio-freight/lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ArrowRight, Check } from 'lucide-react'
+import { ArrowRight, Check, Box, Image as ImageIcon } from 'lucide-react'
+
+// Code-split 3D viewer chunk so initial ProductsPage bundle remains ultra-lightweight
+const LiftInteriorViewer = lazy(() =>
+  import('./LiftInteriorViewer').then((mod) => ({ default: mod.LiftInteriorViewer }))
+)
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -14,10 +20,12 @@ const products = [
   {
     id: 'AE01',
     num: '01',
-    name: 'Hydraulic Elevators',
+    name: 'Standard Elevators',
+    series: 'Standard',
     tagline: 'Imported Hydraulic Technology',
     heroImage: 'https://alphaelevators.in/gallery/hydraulic-lifts-in-chennai-ae01-elevators.webp',
     detailImage: 'https://alphaelevators.in/gallery/hydraulic-lift-company-in-chennai-ae01.webp',
+    modelUrl: '/lifts/metal.glb',
     description: 'Alpha Elevators offers gearless Elevators for high-rise buildings, providing smooth operation, energy efficiency, and modern design. Hydraulic home Elevators are cost-effective, reliable, and suited for low to mid-rise structures, offering a smooth ride and safety features like emergency lowering.',
     sections: [
       {
@@ -43,9 +51,11 @@ const products = [
     id: 'AE02',
     num: '02',
     name: 'Rope Traction Lifts',
+    series: 'Premium',
     tagline: 'Gearless Traction Technology',
     heroImage: 'https://alphaelevators.in/gallery/modern-rope-elevator-chennai.webp',
     detailImage: 'https://alphaelevators.in/gallery/rope-lift-installation-chennai.webp',
+    modelUrl: '/lifts/main white.glb',
     description: 'Alpha Gearless unique traction Elevators solution that complies with Lifts Directive 2014/33/EU. Installation can be customized to any architectural need and design, even special and challenging projects. It is an elegant and truly convenient solution.',
     sections: [
       {
@@ -71,9 +81,11 @@ const products = [
     id: 'AE03',
     num: '03',
     name: 'Belt Drive Lifts',
+    series: 'Luxury',
     tagline: 'Next-Gen Belt Technology',
     heroImage: 'https://alphaelevators.in/nimg/ae02.jpeg',
     detailImage: 'https://alphaelevators.in/gallery/gallery.jpg',
+    modelUrl: '/lifts/soft black .glb',
     description: 'Alpha Elevators introduces a next-generation belt-driven system designed to replace conventional rope mechanisms. Our innovative belts are made from high-strength polyurethane with embedded steel cords, offering exceptional durability, flexibility, and zero lubrication.',
     sections: [
       {
@@ -94,22 +106,124 @@ const products = [
       }
     ],
     features: ['First-ever multi-mode function', 'Customisable landing display', '2x faster performance', 'Compatible with G+5 stops', 'Touch Screen Display', 'No pit, machine room or headroom', '360-degree panoramic glass views']
+  },
+  {
+    id: 'EV01',
+    num: '04',
+    name: 'Eco-Smart EV Elevators',
+    series: 'EV Model',
+    tagline: 'Single-Phase Green Mobility',
+    heroImage: 'https://alphaelevators.in/gallery/modern-rope-elevator-chennai.webp',
+    detailImage: 'https://alphaelevators.in/gallery/gallery.jpg',
+    modelUrl: '/lifts/alpha.glb',
+    description: 'Alpha Elevators redefines vertical mobility with its energy-efficient and eco-conscious design. Built to run on single-phase 240V power, it consumes less than 15 units of electricity per month, making it an ideal choice for modern homes.',
+    sections: [
+      {
+        title: 'Introduction',
+        text: 'The Alpha EV Model delivers green mobility with ultra-low power consumption. Engineered with an intelligent regenerative drive, it recharges auxiliary batteries during descent and operates seamlessly on residential solar or single-phase connections.'
+      },
+      {
+        title: 'Single-Phase 0.75kW Drive',
+        text: 'Operates on standard single-phase 240V household power supply without requiring expensive commercial three-phase electrical sanction. Uses less power than a standard household microwave or iron.'
+      },
+      {
+        title: 'Regenerative Descent Technology',
+        text: 'During downward travel, the elevator motor converts potential gravitational energy into clean electrical energy, recharging onboard backup storage units and minimizing monthly grid consumption.'
+      },
+      {
+        title: 'Continuous UPS Operation',
+        text: 'Equipped with an integrated high-capacity lithium iron phosphate (LiFePO4) backup battery module capable of delivering up to 30 continuous trips during full power blackouts.'
+      }
+    ],
+    features: ['Low power consumption (0.75kW, 240V single-phase)', 'Intelligent power-saving descent system', 'Consumes < 15 units monthly', 'Integrated solar & residential UPS compatibility', 'Touch Screen Display', 'No pit, machine room or headroom', '360-degree panoramic glass views']
   }
 ]
+
+const SHOWROOM_FINISHES = {
+  metal: {
+    title: 'Standard Cabin',
+    subtitle: 'Brushed Metal & Titanium Grid',
+    desc: 'Step inside our Standard series elevator cabin. Inspect precision brushed stainless steel panels, illuminated ceiling grid, and modern high-durability finish. Orbit 360°, walk inside, or switch lighting presets.',
+    url: '/lifts/metal.glb',
+    name: 'Alpha Standard Cabin — Metal Series'
+  },
+  white: {
+    title: 'Premium Cabin',
+    subtitle: 'Main White Interior & Architectural Accents',
+    desc: 'Step inside our Premium series elevator cabin. Experience the clean minimalist white wall panels, vein-matched marble flooring, mirror-polish titanium gold trim, and diffuse coffer illumination.',
+    url: '/lifts/main white.glb',
+    name: 'Alpha Premium Cabin — Main White Series'
+  },
+  alpha: {
+    title: 'Luxury Cabin',
+    subtitle: 'Alpha Gold Signature Series',
+    desc: 'Step inside our flagship Luxury Alpha Edition. Imbued with vacuum-plated PVD titanium gold accents, panoramic glass, acoustic damping panels, and full architectural interior reflections.',
+    url: '/lifts/alpha.glb',
+    name: 'Alpha Luxury Cabin — Gold Signature Series'
+  },
+  'soft-black': {
+    title: 'Luxury Cabin',
+    subtitle: 'Soft Black Obsidian Edition',
+    desc: 'Step inside our Soft Black architectural edition. Inspect the deep matte obsidian texture, mirror-polish PVD titanium accents, acoustic walling, and diffuse coffer illumination.',
+    url: '/lifts/soft black .glb',
+    name: 'Alpha Luxury Cabin — Soft Black Edition'
+  },
+  ev: {
+    title: 'EV Model Cabin',
+    subtitle: 'Single-Phase Green Technology',
+    desc: 'Step inside our eco-smart EV Model elevator cabin. Powered by 240V single-phase power with regenerative braking, titanium accents, and full panoramic glass styling.',
+    url: '/lifts/alpha.glb',
+    name: 'Alpha EV Model — Green Tech Series'
+  }
+} as const
 
 export const ProductsPage = ({ onBack }: ProductsPageProps) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLDivElement>(null)
   const heroImageRef = useRef<HTMLDivElement>(null)
   const imageInnerRef = useRef<HTMLImageElement>(null)
+  const lenisRef = useRef<Lenis | null>(null)
   const [activeProduct, setActiveProduct] = useState(0)
   const [expandedSection, setExpandedSection] = useState<number | null>(null)
+  const [heroViewMode, setHeroViewMode] = useState<'3d' | 'photo'>('3d')
+  const [showroomFinish, setShowroomFinish] = useState<'metal' | 'white' | 'alpha' | 'soft-black' | 'ev'>('metal')
 
   const currentProduct = products[activeProduct]
 
-  /* ─── Animations ─── */
+  const scrollToSection = (target: string | number) => {
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(target, { duration: 1.2 })
+    } else {
+      if (typeof target === 'number') {
+        window.scrollTo({ top: target, behavior: 'smooth' })
+      } else {
+        document.querySelector(target)?.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }
+
+  /* ─── Smooth Scrolling & Animations ─── */
   useEffect(() => {
     window.scrollTo(0, 0)
+
+    // Dedicated smooth scroll instance for ProductsPage
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 2,
+    })
+    lenisRef.current = lenis
+    lenis.on('scroll', ScrollTrigger.update)
+
+    const tickerHandler = (time: number) => {
+      lenis.raf(time * 1000)
+    }
+    gsap.ticker.add(tickerHandler)
+    gsap.ticker.lagSmoothing(0)
 
     const ctx = gsap.context(() => {
       // Hero entrance
@@ -197,7 +311,12 @@ export const ProductsPage = ({ onBack }: ProductsPageProps) => {
       })
     }, containerRef)
 
-    return () => ctx.revert()
+    return () => {
+      lenis.destroy()
+      lenisRef.current = null
+      gsap.ticker.remove(tickerHandler)
+      ctx.revert()
+    }
   }, [])
 
   /* ─── Product switch animation ─── */
@@ -268,7 +387,7 @@ export const ProductsPage = ({ onBack }: ProductsPageProps) => {
           <div className="products-hero-line h-[1px] bg-gradient-to-r from-accent via-white/20 to-transparent origin-left"></div>
 
           {/* Product selector tabs */}
-          <div className="products-hero-desc grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-6">
+          <div className="products-hero-desc grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
             {products.map((p, i) => (
               <button
                 key={p.id}
@@ -279,7 +398,10 @@ export const ProductsPage = ({ onBack }: ProductsPageProps) => {
                     : 'border-white/10 hover:border-white/25 bg-transparent'
                 }`}
               >
-                <span className={`text-xs tracking-[0.25em] uppercase block mb-1 transition-colors duration-300 ${i === activeProduct ? 'text-accent' : 'text-white/40'}`}>{p.id}</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-xs tracking-[0.25em] uppercase transition-colors duration-300 ${i === activeProduct ? 'text-accent' : 'text-white/40'}`}>{p.id}</span>
+                  <span className={`text-[10px] font-mono uppercase tracking-[0.2em] px-2 py-0.5 rounded-xs border transition-colors ${i === activeProduct ? 'border-accent/40 bg-accent/15 text-accent' : 'border-white/10 bg-white/5 text-white/50'}`}>{p.series}</span>
+                </div>
                 <span className={`text-lg font-light block transition-colors duration-300 ${i === activeProduct ? 'text-white' : 'text-white/70'}`}>{p.name}</span>
                 <span className="text-white/30 text-xs tracking-wider mt-1 block">{p.tagline}</span>
               </button>
@@ -297,29 +419,108 @@ export const ProductsPage = ({ onBack }: ProductsPageProps) => {
               </p>
             </div>
 
-            <div
-              className="w-full relative"
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              style={{ perspective: '1800px' }}
-            >
+            <div className="w-full flex flex-col gap-3">
+              {/* Preview mode switch (Live Simulation / Photo) */}
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                  <span className="text-white/60 text-[11px] font-mono uppercase tracking-[0.25em]">
+                    {heroViewMode === '3d' ? 'Live Simulation Active' : 'Product Photo'}
+                  </span>
+                </div>
+                <div className="flex items-center bg-black/40 backdrop-blur-md border border-white/10 p-1 rounded-sm gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setHeroViewMode('3d')}
+                    className={`flex items-center gap-1.5 px-3 py-1 text-xs font-display tracking-wider uppercase rounded-sm transition-all duration-300 ${
+                      heroViewMode === '3d'
+                        ? 'bg-accent text-primary font-semibold shadow-[0_0_12px_rgba(0,204,204,0.3)]'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    <Box className="w-3.5 h-3.5" />
+                    Live Simulation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeroViewMode('photo')}
+                    className={`flex items-center gap-1.5 px-3 py-1 text-xs font-display tracking-wider uppercase rounded-sm transition-all duration-300 ${
+                      heroViewMode === 'photo'
+                        ? 'bg-accent text-primary font-semibold shadow-[0_0_12px_rgba(0,204,204,0.3)]'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    Photo
+                  </button>
+                </div>
+              </div>
+
+              {/* 3D Model View - Live Simulation mounted on demand */}
+              {heroViewMode === '3d' && (
+                <div className="w-full relative aspect-[16/10] min-h-[380px] sm:min-h-[460px] lg:min-h-[520px] rounded-sm overflow-hidden border border-white/10 shadow-[0_40px_80px_rgba(0,204,204,0.15)]">
+                  <Suspense
+                    fallback={
+                      <div className="w-full h-full min-h-[380px] sm:min-h-[460px] lg:min-h-[520px] bg-[#06090e] flex flex-col items-center justify-center">
+                        <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3" />
+                        <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-accent">Initializing Live Simulation...</span>
+                      </div>
+                    }
+                  >
+                    <LiftInteriorViewer
+                      key={currentProduct.id}
+                      compact
+                      className="w-full h-full border-0 shadow-none"
+                      modelUrl={currentProduct.modelUrl}
+                      productName={`${currentProduct.name} (${currentProduct.series}) — Live Simulation`}
+                      productTagline={currentProduct.tagline}
+                      hdriUrl="/small_empty_room_3_1k.hdr"
+                    />
+                  </Suspense>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection('#virtual-showroom')}
+                    className="absolute top-4 right-14 z-20 px-2.5 py-1 text-[10px] uppercase font-mono tracking-wider bg-accent/20 hover:bg-accent hover:text-primary text-white border border-accent/40 rounded-sm transition-all backdrop-blur-md pointer-events-auto"
+                  >
+                    Full Tour ↓
+                  </button>
+                </div>
+              )}
+
+              {/* Photographic View */}
               <div
-                ref={heroImageRef}
-                className="w-full aspect-[16/10] rounded-sm shadow-[0_40px_80px_rgba(0,204,204,0.12)] border border-white/10 overflow-hidden"
-                style={{ transformStyle: 'preserve-3d' }}
+                className={`w-full relative ${heroViewMode === 'photo' ? 'block' : 'hidden'}`}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                style={{ perspective: '1800px' }}
               >
-                <img
-                  ref={imageInnerRef}
-                  src={currentProduct.heroImage}
-                  alt={currentProduct.name}
-                  className="w-[115%] h-[115%] object-cover -ml-[7.5%] -mt-[7.5%]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/60 via-primary/10 to-transparent pointer-events-none" />
-                <div className="absolute bottom-6 left-6 pointer-events-none" style={{ transform: 'translateZ(50px)' }}>
-                  <div className="backdrop-blur-lg bg-black/50 border border-white/10 px-5 py-3 rounded-sm">
-                    <p className="text-white font-display text-base tracking-wider uppercase">{currentProduct.id}</p>
-                    <p className="text-accent text-xs tracking-[0.2em] uppercase font-semibold mt-0.5">{currentProduct.tagline}</p>
+                <div
+                  ref={heroImageRef}
+                  className="w-full aspect-[16/10] rounded-sm shadow-[0_40px_80px_rgba(0,204,204,0.12)] border border-white/10 overflow-hidden relative"
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  <img
+                    ref={imageInnerRef}
+                    src={currentProduct.heroImage}
+                    alt={currentProduct.name}
+                    className="w-[115%] h-[115%] object-cover -ml-[7.5%] -mt-[7.5%]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/60 via-primary/10 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-6 left-6 pointer-events-none" style={{ transform: 'translateZ(50px)' }}>
+                    <div className="backdrop-blur-lg bg-black/50 border border-white/10 px-5 py-3 rounded-sm">
+                      <p className="text-white font-display text-base tracking-wider uppercase">{currentProduct.id}</p>
+                      <p className="text-accent text-xs tracking-[0.2em] uppercase font-semibold mt-0.5">{currentProduct.tagline}</p>
+                    </div>
                   </div>
+                  {/* Shortcut to 3D virtual showroom */}
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection('#virtual-showroom')}
+                    className="absolute bottom-6 right-6 z-20 px-3 py-1.5 text-[11px] uppercase font-mono tracking-wider bg-black/70 hover:bg-accent hover:text-primary text-white border border-white/20 hover:border-accent rounded-sm transition-all duration-300 backdrop-blur-md flex items-center gap-2 group/tour"
+                  >
+                    <Box className="w-3.5 h-3.5 text-accent group-hover/tour:text-primary" />
+                    <span>3D Cabin Tour ↓</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -393,6 +594,97 @@ export const ProductsPage = ({ onBack }: ProductsPageProps) => {
       </section>
 
       {/* ═══════════════════════════════════════════════════
+          SECTION 2.5 — Virtual Showroom: 3D Lift Cabin Interior
+      ═══════════════════════════════════════════════════ */}
+      <section id="virtual-showroom" className="scroll-section py-28 md:py-36 px-6 md:px-12 lg:px-20 bg-primary border-t border-white/5 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/5 via-primary to-primary pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative z-10 flex flex-col gap-12">
+          <div className="reveal-elem text-center max-w-3xl mx-auto">
+            <span className="text-accent uppercase tracking-[0.4em] text-xs font-semibold flex items-center justify-center gap-3 mb-6">
+              <span className="w-8 h-[1px] bg-accent line-reveal"></span> 3D Virtual Showroom <span className="w-8 h-[1px] bg-accent line-reveal"></span>
+            </span>
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-light uppercase tracking-wide">
+              {SHOWROOM_FINISHES[showroomFinish].title} <span className="text-accent">— {SHOWROOM_FINISHES[showroomFinish].subtitle}</span>
+            </h2>
+            <div className="line-reveal w-24 h-[1px] bg-accent/40 mx-auto my-6"></div>
+            <p className="text-metal text-base md:text-lg font-light leading-relaxed mb-6">
+              {SHOWROOM_FINISHES[showroomFinish].desc}
+            </p>
+
+            {/* Finish Switcher */}
+            <div className="inline-flex flex-wrap items-center justify-center bg-black/50 backdrop-blur-xl border border-white/10 p-1 rounded-sm gap-1">
+              {[
+                { id: 'metal', label: 'Standard (Metal)' },
+                { id: 'white', label: 'Premium (White)' },
+                { id: 'alpha', label: 'Luxury (Alpha Gold)' },
+                { id: 'soft-black', label: 'Luxury (Soft Black)' },
+                { id: 'ev', label: 'EV Model (Green Tech)' }
+              ].map((finish) => (
+                <button
+                  key={finish.id}
+                  type="button"
+                  onClick={() => setShowroomFinish(finish.id as any)}
+                  className={`px-4 py-1.5 text-xs font-display tracking-wider uppercase rounded-sm transition-all duration-300 ${
+                    showroomFinish === finish.id
+                      ? 'bg-accent text-primary font-semibold shadow-[0_0_15px_rgba(0,204,204,0.35)]'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  {finish.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Full Interactive 3D Cabin Model */}
+          <div className="reveal-elem w-full">
+            <Suspense
+              fallback={
+                <div className="w-full h-[580px] lg:h-[680px] rounded-sm bg-[#06090e] border border-white/10 flex flex-col items-center justify-center">
+                  <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin mb-4" />
+                  <span className="text-xs font-mono uppercase tracking-[0.25em] text-accent">Loading 3D Experience...</span>
+                </div>
+              }
+            >
+              <LiftInteriorViewer
+                key={showroomFinish}
+                modelUrl={SHOWROOM_FINISHES[showroomFinish].url}
+                productName={SHOWROOM_FINISHES[showroomFinish].name}
+                productTagline={SHOWROOM_FINISHES[showroomFinish].subtitle}
+                hdriUrl="/small_empty_room_3_1k.hdr"
+              />
+            </Suspense>
+          </div>
+
+          {/* Architectural Specification Cards */}
+          <div className="reveal-elem grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-6 border border-white/5 rounded-sm bg-secondary/60 backdrop-blur-md hover:border-accent/30 transition-all duration-300">
+              <span className="text-accent text-[10px] font-mono tracking-[0.25em] uppercase block mb-1">Flooring</span>
+              <p className="text-white text-base font-display uppercase tracking-wider">Bookmatched Marble</p>
+              <p className="text-metal text-xs mt-1.5 font-light leading-relaxed">Italian vein-matched marble with gold-plated geometric inlay and anti-slip micro-texture.</p>
+            </div>
+            <div className="p-6 border border-white/5 rounded-sm bg-secondary/60 backdrop-blur-md hover:border-accent/30 transition-all duration-300">
+              <span className="text-accent text-[10px] font-mono tracking-[0.25em] uppercase block mb-1">Accents</span>
+              <p className="text-white text-base font-display uppercase tracking-wider">PVD Titanium Gold</p>
+              <p className="text-metal text-xs mt-1.5 font-light leading-relaxed">Vacuum-plated titanium gold trims and handrails with lifetime anti-tarnish and anti-fingerprint coating.</p>
+            </div>
+            <div className="p-6 border border-white/5 rounded-sm bg-secondary/60 backdrop-blur-md hover:border-accent/30 transition-all duration-300">
+              <span className="text-accent text-[10px] font-mono tracking-[0.25em] uppercase block mb-1">Acoustics</span>
+              <p className="text-white text-base font-display uppercase tracking-wider">Sound-Damping Walls</p>
+              <p className="text-metal text-xs mt-1.5 font-light leading-relaxed">Multi-layer acoustic silver fabric panels coupled with vibration dampers for whisper-quiet travel.</p>
+            </div>
+            <div className="p-6 border border-white/5 rounded-sm bg-secondary/60 backdrop-blur-md hover:border-accent/30 transition-all duration-300">
+              <span className="text-accent text-[10px] font-mono tracking-[0.25em] uppercase block mb-1">Illumination</span>
+              <p className="text-white text-base font-display uppercase tracking-wider">Diffuse Coffer LED</p>
+              <p className="text-metal text-xs mt-1.5 font-light leading-relaxed">Indirect ceiling coffer lighting system with dynamic warmth tuning and zero direct glare.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════
           SECTION 3 — Key Features Grid
       ═══════════════════════════════════════════════════ */}
       <section className="scroll-section py-28 md:py-36 px-6 md:px-12 lg:px-20 bg-secondary border-t border-white/5">
@@ -440,7 +732,7 @@ export const ProductsPage = ({ onBack }: ProductsPageProps) => {
             {products.map((p, i) => (
               <button
                 key={p.id}
-                onClick={() => { setActiveProduct(i); setExpandedSection(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                onClick={() => { setActiveProduct(i); setExpandedSection(null); scrollToSection(0) }}
                 className={`reveal-elem group relative text-left overflow-hidden rounded-sm border transition-all duration-500 ${
                   i === activeProduct ? 'border-accent/50' : 'border-white/5 hover:border-white/20'
                 }`}
@@ -506,3 +798,4 @@ export const ProductsPage = ({ onBack }: ProductsPageProps) => {
     </div>
   )
 }
+    
