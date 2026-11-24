@@ -705,20 +705,21 @@ export const LiftDetailsPage = ({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#07090d] text-[#e8eaed] w-full font-sans antialiased selection:bg-accent/30 selection:text-white pb-24">
       {/* ─── Top Amazon-Style Navigation Bar ─── */}
       <header className="sticky top-0 z-40 w-full bg-[#0b0e14]/95 backdrop-blur-md border-b border-white/10 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/15 bg-white/5 hover:bg-accent/15 hover:border-accent text-white/80 hover:text-white transition-all text-xs font-mono uppercase tracking-wider cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-md border border-white/15 bg-white/5 hover:bg-accent/15 hover:border-accent text-white/80 hover:text-white transition-all text-[11px] sm:text-xs font-mono uppercase tracking-wider cursor-pointer whitespace-nowrap"
               title="Back to Gallery"
             >
-              <ArrowLeft size={16} />
-              <span>Back to Gallery</span>
+              <ArrowLeft size={15} />
+              <span className="hidden sm:inline">Back to Gallery</span>
+              <span className="sm:hidden">Back</span>
             </button>
 
             <div className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="Alpha Elevators" className="h-6 w-auto opacity-90" />
+              <img src="/logo.png" alt="Alpha Elevators" className="h-5 sm:h-6 w-auto opacity-90 shrink-0" />
               <div className="hidden md:flex items-center text-xs text-white/40 font-mono tracking-wider gap-1.5">
                 <span>/</span>
                 <span className="text-white/70">CATALOG</span>
@@ -729,13 +730,13 @@ export const LiftDetailsPage = ({
           </div>
 
           {/* Quick Model Selector Pills */}
-          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto py-1 scrollbar-none">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto py-1 scrollbar-none min-w-0">
             {PRODUCTS.map((prod, idx) => (
               <button
                 key={prod.id}
                 type="button"
                 onClick={() => setActiveProductIdx(idx)}
-                className={`px-3 py-1.5 rounded-full text-xs font-display tracking-wider transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-display tracking-wider transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   idx === activeProductIdx
                     ? 'bg-accent text-[#07090d] font-bold shadow-[0_0_12px_rgba(0,204,204,0.4)]'
                     : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10'
@@ -767,43 +768,43 @@ export const LiftDetailsPage = ({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 lg:pt-8">
         
         {/* Breadcrumb row */}
-        <div className="flex items-center gap-2 text-xs font-mono text-white/50 mb-4 overflow-x-auto">
-          <span className="hover:text-accent cursor-pointer" onClick={onBack}>Alpha Elevators</span>
-          <span>&gt;</span>
-          <span>Residential Home Lifts</span>
-          <span>&gt;</span>
-          <span>{currentProduct.series}</span>
-          <span>&gt;</span>
-          <span className="text-white/80 font-semibold">{currentProduct.name}</span>
+        <div className="flex items-center gap-2 text-[11px] sm:text-xs font-mono text-white/50 mb-4 overflow-x-auto whitespace-nowrap scrollbar-none">
+          <span className="hover:text-accent cursor-pointer shrink-0" onClick={onBack}>Alpha Elevators</span>
+          <span className="shrink-0">&gt;</span>
+          <span className="shrink-0">Residential Home Lifts</span>
+          <span className="shrink-0">&gt;</span>
+          <span className="shrink-0">{currentProduct.series}</span>
+          <span className="shrink-0">&gt;</span>
+          <span className="text-white/80 font-semibold shrink-0">{currentProduct.name}</span>
         </div>
 
         {/* 2-Column Grid: Left (Gallery + Zoom + Colors) | Right (Buy Box + Specs) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-start">
           
           {/* ═════════════════════════════════════════════════════════
               LEFT COLUMN: Product Images, Draggable Rail, Color Swap
           ═════════════════════════════════════════════════════════ */}
-          <div className="lg:col-span-7 flex flex-col gap-5 lg:sticky lg:top-24">
+          <div className="lg:col-span-7 flex flex-col gap-4 sm:gap-5 lg:sticky lg:top-24 min-w-0">
             
             {/* Interactive Demo Buttons (Overall, Pit & Mechanism) */}
             {activeVideos && (
-              <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-gradient-to-r from-accent/15 via-[#0d1117] to-white/[0.02] border border-accent/40 shadow-lg">
-                <div className="flex items-center gap-2.5">
-                  <span className="relative flex h-2.5 w-2.5">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5 sm:gap-3 p-3 rounded-xl bg-gradient-to-r from-accent/15 via-[#0d1117] to-white/[0.02] border border-accent/40 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
                   </span>
-                  <span className="text-xs font-mono uppercase tracking-wider text-white font-semibold">
+                  <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-white font-semibold">
                     {selectedColor.id.includes('black') ? 'Black Edition ' : 'Hydraulic '}Engineering Demos:
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   {/* Photo Mode Button */}
                   <button
                     type="button"
                     onClick={() => setActiveVideoMode(null)}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-mono tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
                       activeVideoMode === null
                         ? 'bg-white/20 text-white font-bold border border-white/30 shadow-sm'
                         : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/10'
@@ -818,14 +819,14 @@ export const LiftDetailsPage = ({
                     <button
                       type="button"
                       onClick={() => setActiveVideoMode(activeVideoMode === 'overall' ? null : 'overall')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3 sm:px-4 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
                         activeVideoMode === 'overall'
                           ? 'bg-accent text-black font-extrabold shadow-[0_0_18px_rgba(0,204,204,0.6)] ring-2 ring-accent'
                           : 'bg-accent/15 text-accent hover:bg-accent hover:text-black border border-accent/40 hover:border-accent'
                       }`}
                       title="Play Overall Video Showcase on Loop"
                     >
-                      <Play size={13} className={activeVideoMode === 'overall' ? 'fill-black text-black' : 'fill-accent text-accent'} />
+                      <Play size={12} className={activeVideoMode === 'overall' ? 'fill-black text-black' : 'fill-accent text-accent'} />
                       <span>Overall</span>
                     </button>
                   )}
@@ -835,14 +836,14 @@ export const LiftDetailsPage = ({
                     <button
                       type="button"
                       onClick={() => setActiveVideoMode(activeVideoMode === 'pit' ? null : 'pit')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3 sm:px-4 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
                         activeVideoMode === 'pit'
                           ? 'bg-accent text-black font-extrabold shadow-[0_0_18px_rgba(0,204,204,0.6)] ring-2 ring-accent'
                           : 'bg-accent/15 text-accent hover:bg-accent hover:text-black border border-accent/40 hover:border-accent'
                       }`}
                       title="Play Pit Video Demonstration"
                     >
-                      <Play size={13} className={activeVideoMode === 'pit' ? 'fill-black text-black' : 'fill-accent text-accent'} />
+                      <Play size={12} className={activeVideoMode === 'pit' ? 'fill-black text-black' : 'fill-accent text-accent'} />
                       <span>Pit</span>
                     </button>
                   )}
@@ -852,14 +853,14 @@ export const LiftDetailsPage = ({
                     <button
                       type="button"
                       onClick={() => setActiveVideoMode(activeVideoMode === 'mechanism' ? null : 'mechanism')}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3 sm:px-4 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
                         activeVideoMode === 'mechanism'
                           ? 'bg-accent text-black font-extrabold shadow-[0_0_18px_rgba(0,204,204,0.6)] ring-2 ring-accent'
                           : 'bg-accent/15 text-accent hover:bg-accent hover:text-black border border-accent/40 hover:border-accent'
                       }`}
                       title="Play Mechanism Video Demonstration"
                     >
-                      <Cog size={13} className={activeVideoMode === 'mechanism' ? 'animate-spin text-black' : 'text-accent'} />
+                      <Cog size={12} className={activeVideoMode === 'mechanism' ? 'animate-spin text-black' : 'text-accent'} />
                       <span>Mechanism</span>
                     </button>
                   )}
@@ -869,10 +870,10 @@ export const LiftDetailsPage = ({
                     <button
                       type="button"
                       onClick={handleSwitchToNormalVideo}
-                      className="px-4 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer bg-white/15 hover:bg-accent hover:text-black text-white border border-white/30 hover:border-accent shadow-sm"
+                      className="px-3 sm:px-4 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer bg-white/15 hover:bg-accent hover:text-black text-white border border-white/30 hover:border-accent shadow-sm"
                       title="Switch to Normal Hydraulic Video"
                     >
-                      <RotateCcw size={13} className="text-accent group-hover:text-black" />
+                      <RotateCcw size={12} className="text-accent group-hover:text-black" />
                       <span>Normal Video</span>
                     </button>
                   ) : (
@@ -880,7 +881,7 @@ export const LiftDetailsPage = ({
                       <button
                         type="button"
                         onClick={handleSwitchToBlackVideo}
-                        className="px-4 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer bg-black/80 hover:bg-black text-white border border-white/25 hover:border-accent shadow-sm"
+                        className="px-3 sm:px-4 py-1.5 rounded-lg text-[11px] sm:text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer bg-black/80 hover:bg-black text-white border border-white/25 hover:border-accent shadow-sm"
                         title="Switch to Black Lift Video"
                       >
                         <span className="w-2 h-2 rounded-full bg-accent" />
@@ -898,82 +899,99 @@ export const LiftDetailsPage = ({
               onMouseEnter={() => !activeVideoMode && setIsZooming(true)}
               onMouseLeave={() => setIsZooming(false)}
               onMouseMove={handleMouseMove}
-              className={`relative w-full aspect-[4/3] sm:aspect-[16/10] min-h-[460px] sm:min-h-[540px] lg:min-h-[620px] rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl group select-none ${
+              className={`relative w-full aspect-[4/3] sm:aspect-[16/10] min-h-[260px] sm:min-h-[540px] lg:min-h-[620px] rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl group select-none ${
                 activeVideoMode ? 'cursor-default' : 'cursor-crosshair'
               }`}
             >
-              {/* Product Badges (Shown when in Photo mode) */}
-              {!activeVideoMode && (
-                <div className="absolute top-4 left-4 z-20 flex flex-col gap-2 pointer-events-none">
-                  <span className="px-3 py-1 rounded bg-amber-500/90 text-black font-extrabold text-[10px] tracking-wider uppercase shadow-md flex items-center gap-1 w-fit">
-                    <Award size={12} />
-                    <span>{currentProduct.badge}</span>
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded bg-black/70 backdrop-blur-md text-accent border border-accent/30 font-mono text-[10px] tracking-widest uppercase w-fit">
-                    194 Safety Parameters
-                  </span>
+              {/* Unified Top Overlay Bar (Prevents any overlap between left badges/status and right actions on phone & desktop) */}
+              <div className="absolute top-2.5 left-2.5 right-2.5 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-start justify-between gap-2 pointer-events-none">
+                {/* Left Side: Playing Status Pill (Video Mode) OR Product Badges (Photo Mode) */}
+                {activeVideoMode ? (
+                  <div className="min-w-0 max-w-full">
+                    <span className="px-2.5 py-1 sm:px-3 sm:py-1 rounded bg-black/85 backdrop-blur-md border border-accent/40 text-accent font-mono text-[10px] sm:text-xs tracking-wider uppercase inline-flex items-center gap-1.5 sm:gap-2 shadow-xl max-w-full">
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-accent animate-ping shrink-0" />
+                      <span className="truncate">
+                        {selectedColor.id.includes('black') ? 'Black Edition ' : 'Hydraulic '}
+                        {activeVideoMode === 'pit'
+                          ? 'Pit 150mm View'
+                          : activeVideoMode === 'mechanism'
+                          ? 'Drive Mechanism View'
+                          : '360° Overall Tour'}
+                      </span>
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5 sm:gap-2 min-w-0">
+                    <span className="px-2.5 sm:px-3 py-1 rounded bg-amber-500/90 text-black font-extrabold text-[9px] sm:text-[10px] tracking-wider uppercase shadow-md inline-flex items-center gap-1 w-fit max-w-full">
+                      <Award size={11} className="shrink-0" />
+                      <span className="truncate">{currentProduct.badge}</span>
+                    </span>
+                    <span className="px-2 sm:px-2.5 py-0.5 rounded bg-black/70 backdrop-blur-md text-accent border border-accent/30 font-mono text-[9px] sm:text-[10px] tracking-widest uppercase w-fit">
+                      194 Safety Parameters
+                    </span>
+                  </div>
+                )}
+
+                {/* Right Side: Action Icons Overlay (Desktop shows Overall/Pit/Mech + Tour; Mobile keeps only Tour since demo bar is directly above) */}
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 pointer-events-auto">
+                  {activeVideos?.overall && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveVideoMode(activeVideoMode === 'overall' ? null : 'overall')}
+                      className={`hidden sm:flex px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider transition-all backdrop-blur-md items-center gap-1.5 shadow-md cursor-pointer ${
+                        activeVideoMode === 'overall'
+                          ? 'bg-accent text-black font-bold ring-2 ring-accent'
+                          : 'bg-black/70 hover:bg-accent hover:text-black border border-white/20 text-white'
+                      }`}
+                      title="Play Overall Video on Loop"
+                    >
+                      <Play size={12} className={activeVideoMode === 'overall' ? 'fill-black text-black' : 'fill-accent text-accent'} />
+                      <span>Overall</span>
+                    </button>
+                  )}
+
+                  {activeVideos?.pit && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveVideoMode(activeVideoMode === 'pit' ? null : 'pit')}
+                      className={`hidden sm:flex px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider transition-all backdrop-blur-md items-center gap-1.5 shadow-md cursor-pointer ${
+                        activeVideoMode === 'pit'
+                          ? 'bg-accent text-black font-bold ring-2 ring-accent'
+                          : 'bg-black/70 hover:bg-accent hover:text-black border border-white/20 text-white'
+                      }`}
+                      title="Play Pit Video Demonstration"
+                    >
+                      <Play size={12} className={activeVideoMode === 'pit' ? 'fill-black text-black' : 'fill-accent text-accent'} />
+                      <span>Pit</span>
+                    </button>
+                  )}
+
+                  {activeVideos?.mechanism && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveVideoMode(activeVideoMode === 'mechanism' ? null : 'mechanism')}
+                      className={`hidden sm:flex px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider transition-all backdrop-blur-md items-center gap-1.5 shadow-md cursor-pointer ${
+                        activeVideoMode === 'mechanism'
+                          ? 'bg-accent text-black font-bold ring-2 ring-accent'
+                          : 'bg-black/70 hover:bg-accent hover:text-black border border-white/20 text-white'
+                      }`}
+                      title="Play Drive Mechanism Video"
+                    >
+                      <Cog size={13} className={activeVideoMode === 'mechanism' ? 'animate-spin text-black' : 'text-accent'} />
+                      <span>Mechanism</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setIsVideoModalOpen(true)}
+                    className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-black/75 hover:bg-accent hover:text-black border border-white/20 hover:border-accent text-white text-[10px] sm:text-xs font-mono tracking-wider transition-all backdrop-blur-md flex items-center gap-1.5 shadow-md cursor-pointer"
+                    title="Watch Video Tour"
+                  >
+                    <Play size={12} className="fill-current text-accent group-hover:text-black" />
+                    <span className="hidden sm:inline">Tour</span>
+                  </button>
                 </div>
-              )}
-
-              {/* Action Icons Overlay (Top Right: Video Demo & Demo Toggles) */}
-              <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-                {activeVideos?.overall && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideoMode(activeVideoMode === 'overall' ? null : 'overall')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider transition-all backdrop-blur-md flex items-center gap-1.5 shadow-md cursor-pointer ${
-                      activeVideoMode === 'overall'
-                        ? 'bg-accent text-black font-bold ring-2 ring-accent'
-                        : 'bg-black/70 hover:bg-accent hover:text-black border border-white/20 text-white'
-                    }`}
-                    title="Play Overall Video on Loop"
-                  >
-                    <Play size={12} className={activeVideoMode === 'overall' ? 'fill-black text-black' : 'fill-accent text-accent'} />
-                    <span>Overall</span>
-                  </button>
-                )}
-
-                {activeVideos?.pit && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideoMode(activeVideoMode === 'pit' ? null : 'pit')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider transition-all backdrop-blur-md flex items-center gap-1.5 shadow-md cursor-pointer ${
-                      activeVideoMode === 'pit'
-                        ? 'bg-accent text-black font-bold ring-2 ring-accent'
-                        : 'bg-black/70 hover:bg-accent hover:text-black border border-white/20 text-white'
-                    }`}
-                    title="Play Pit Video Demonstration"
-                  >
-                    <Play size={12} className={activeVideoMode === 'pit' ? 'fill-black text-black' : 'fill-accent text-accent'} />
-                    <span>Pit</span>
-                  </button>
-                )}
-
-                {activeVideos?.mechanism && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideoMode(activeVideoMode === 'mechanism' ? null : 'mechanism')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider transition-all backdrop-blur-md flex items-center gap-1.5 shadow-md cursor-pointer ${
-                      activeVideoMode === 'mechanism'
-                        ? 'bg-accent text-black font-bold ring-2 ring-accent'
-                        : 'bg-black/70 hover:bg-accent hover:text-black border border-white/20 text-white'
-                    }`}
-                    title="Play Drive Mechanism Video"
-                  >
-                    <Cog size={13} className={activeVideoMode === 'mechanism' ? 'animate-spin text-black' : 'text-accent'} />
-                    <span>Mechanism</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setIsVideoModalOpen(true)}
-                  className="px-3 py-1.5 rounded-lg bg-black/70 hover:bg-accent hover:text-black border border-white/20 hover:border-accent text-white text-xs font-mono tracking-wider transition-all backdrop-blur-md flex items-center gap-1.5 shadow-md cursor-pointer"
-                  title="Watch Video Tour"
-                >
-                  <Play size={13} className="fill-current text-accent group-hover:text-black" />
-                  <span className="hidden sm:inline">Tour</span>
-                </button>
               </div>
 
               {/* ── VIDEO PLAYER AT PRODUCT IMAGE PLACE ── */}
@@ -995,28 +1013,14 @@ export const LiftDetailsPage = ({
                     controls
                     className="w-full h-full object-contain bg-black"
                   />
-                  {/* Top Left Playing Status Pill */}
-                  <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-                    <span className="px-3 py-1 rounded bg-black/85 backdrop-blur-md border border-accent/40 text-accent font-mono text-xs tracking-wider uppercase flex items-center gap-2 shadow-xl">
-                      <span className="w-2 h-2 rounded-full bg-accent animate-ping" />
-                      <span>
-                        {selectedColor.id.includes('black') ? 'Black Edition ' : 'Hydraulic '}
-                        {activeVideoMode === 'pit'
-                          ? 'Pit 150mm View'
-                          : activeVideoMode === 'mechanism'
-                          ? 'Drive Mechanism View'
-                          : '360° Overall Tour'}
-                      </span>
-                    </span>
-                  </div>
 
-                  {/* Return to Photos Button */}
+                  {/* Return to Photos Button (positioned above native video controls bar so it never overlaps on phone) */}
                   <button
                     type="button"
                     onClick={() => setActiveVideoMode(null)}
-                    className="absolute bottom-4 right-4 z-20 px-3.5 py-1.5 rounded-lg bg-black/85 hover:bg-accent hover:text-black border border-white/20 hover:border-accent text-white text-xs font-mono tracking-wider transition-all backdrop-blur-md flex items-center gap-1.5 shadow-xl cursor-pointer"
+                    className="absolute bottom-14 right-3 sm:bottom-14 sm:right-4 z-20 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg bg-black/85 hover:bg-accent hover:text-black border border-white/20 hover:border-accent text-white text-[10px] sm:text-xs font-mono tracking-wider transition-all backdrop-blur-md flex items-center gap-1 sm:gap-1.5 shadow-xl cursor-pointer"
                   >
-                    <X size={14} />
+                    <X size={13} />
                     <span>Back to Photo</span>
                   </button>
                 </div>
@@ -1060,7 +1064,7 @@ export const LiftDetailsPage = ({
 
             {/* ── Draggable Thumbnail Rail (Left side images drag to show) ── */}
             <div className="relative w-full bg-[#0d1117] p-3 rounded-xl border border-white/10">
-              <div className="flex items-center justify-between mb-2 px-1">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2 px-1">
                 <div className="flex items-center gap-2">
                   <Layers size={14} className="text-accent" />
                   <span className="text-xs font-display uppercase tracking-wider text-white/70 font-semibold">
@@ -1161,9 +1165,9 @@ export const LiftDetailsPage = ({
             </div>
 
             {/* ── Different Color Swatch Feature ("show the different color img feature") ── */}
-            <div className="w-full bg-[#0d1117] p-4.5 rounded-xl border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="w-full bg-[#0d1117] p-4 rounded-xl border border-white/10 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <span className="text-xs uppercase font-mono tracking-widest text-white/50">
                     Color / Architectural Finish:
                   </span>
@@ -1270,7 +1274,7 @@ export const LiftDetailsPage = ({
               </p>
 
               {/* Star Rating & Verified Reviews Count */}
-              <div className="flex items-center gap-3 mt-3.5 pb-4 border-b border-white/10">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-3.5 pb-4 border-b border-white/10">
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -1283,11 +1287,11 @@ export const LiftDetailsPage = ({
                     {currentProduct.rating.toFixed(1)}
                   </span>
                 </div>
-                <span className="text-white/20">|</span>
+                <span className="text-white/20 hidden sm:inline">|</span>
                 <span className="text-xs text-accent hover:underline cursor-pointer">
                   {currentProduct.reviewsCount} verified homeowner ratings
                 </span>
-                <span className="text-white/20">|</span>
+                <span className="text-white/20 hidden sm:inline">|</span>
                 <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
                   ✓ Verified Quality
                 </span>
@@ -1295,8 +1299,8 @@ export const LiftDetailsPage = ({
             </div>
 
             {/* ── Price & Quotation Breakdown Card ── */}
-            <div className="p-5 rounded-xl bg-gradient-to-b from-[#111622] to-[#0c0f17] border border-white/15 shadow-xl space-y-4">
-              <div className="flex items-baseline justify-between gap-2">
+            <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-b from-[#111622] to-[#0c0f17] border border-white/15 shadow-xl space-y-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
                   <span className="text-xs uppercase tracking-wider text-white/50 block font-mono">
                     Base System Investment
@@ -1309,7 +1313,7 @@ export const LiftDetailsPage = ({
                   </div>
                 </div>
 
-                <div className="text-right">
+                <div className="sm:text-right">
                   <span className="text-xs text-emerald-400 font-medium block">
                     {currentProduct.pricingBadge || 'Direct Manufacturer Pricing'}
                   </span>
@@ -1320,12 +1324,12 @@ export const LiftDetailsPage = ({
               </div>
 
               {/* Door Opening Surcharge Notification */}
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <span className="text-amber-400 font-bold">Door Opening Notice:</span>
                   <span className="text-slate-300">Extra per opening Door:</span>
                 </div>
-                <span className="font-extrabold text-amber-300 text-sm font-mono">
+                <span className="font-extrabold text-amber-300 text-sm font-mono shrink-0">
                   ₹80,000
                 </span>
               </div>
